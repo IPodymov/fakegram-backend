@@ -20,6 +20,12 @@ export class Post {
   @Column({ nullable: true })
   content: string;
 
+  @Column({ nullable: true })
+  mediaUrl: string | null;
+
+  @Column({ nullable: true })
+  mediaType: string | null;
+
   @Column({ default: false })
   published: boolean;
 

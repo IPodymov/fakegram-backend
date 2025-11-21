@@ -6,10 +6,12 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - '3000:3000'
+      - '${PORT}:${PORT}'
     environment:
       DATABASE_URL: postgresql://postgres:postgres@db:5432/fakegram?schema=public
-      JWT_SECRET: secretKey # В продакшене вынести в .env
+      JWT_SECRET: ${JWT_SECRET}
+    volumes:
+      - ./uploads:/usr/src/app/uploads
     depends_on:
       - db
     restart: always
@@ -17,11 +19,11 @@ services:
   db:
     image: postgres:15-alpine
     ports:
-      - '5432:5432'
+      - '5435:5432'
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: fakegram
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: always
