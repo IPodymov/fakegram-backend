@@ -8,8 +8,11 @@ import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { PostsModule } from './posts/posts.module';
+import { ReelsModule } from './reels/reels.module';
 import { User } from './users/entities/user.entity';
 import { Post } from './posts/entities/post.entity';
+import { Reel } from './reels/entities/reel.entity';
+import { ReelHistory } from './users/entities/reel-history.entity';
 
 @Module({
   imports: [
@@ -25,7 +28,7 @@ import { Post } from './posts/entities/post.entity';
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL'),
-        entities: [User, Post],
+        entities: [User, Post, Reel, ReelHistory],
         synchronize: true, // В продакшене лучше использовать миграции
       }),
       inject: [ConfigService],
@@ -33,6 +36,7 @@ import { Post } from './posts/entities/post.entity';
     UsersModule,
     AuthModule,
     PostsModule,
+    ReelsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

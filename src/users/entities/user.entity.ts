@@ -7,6 +7,8 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Post } from '../../posts/entities/post.entity';
+import { Reel } from '../../reels/entities/reel.entity';
+import { ReelHistory } from './reel-history.entity';
 
 @Entity()
 export class User {
@@ -24,6 +26,12 @@ export class User {
 
   @OneToMany(() => Post, (post) => post.author)
   posts: Post[];
+
+  @OneToMany(() => Reel, (reel) => reel.author)
+  reels: Reel[];
+
+  @OneToMany(() => ReelHistory, (history) => history.user)
+  reelHistory: ReelHistory[];
 
   @CreateDateColumn()
   createdAt: Date;
