@@ -6,6 +6,9 @@
 
 - **Фреймворк:** NestJS (Node.js)
 - **Язык:** TypeScript
+- **База данных:** PostgreSQL
+- **ORM:** TypeORM
+- **Аутентификация:** JWT, Passport
 - **Тестирование:** Jest, Supertest
 - **Линтинг/Форматирование:** ESLint, Prettier
 
@@ -36,6 +39,19 @@
    yarn install
    ```
 
+### Конфигурация
+
+Создайте файл `.env` в корне проекта. Вы можете скопировать пример ниже:
+
+```env
+PORT=3000
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fakegram
+JWT_SECRET=super-secret-key
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=fakegram
+```
+
 ### Запуск приложения
 
 ```bash
@@ -49,7 +65,19 @@ npm run start:debug
 npm run start:prod
 ```
 
-После запуска сервер будет доступен по адресу `http://localhost:3000` (порт по умолчанию для NestJS).
+### 🐳 Запуск через Docker
+
+Для быстрого развертывания приложения вместе с базой данных используйте Docker Compose:
+
+```bash
+# Сборка и запуск контейнеров
+docker-compose up --build -d
+
+# Просмотр логов
+docker-compose logs -f
+```
+
+После запуска сервер будет доступен по адресу `http://localhost:3000`.
 
 ## 🧪 Тестирование
 
@@ -66,6 +94,14 @@ npm run test:cov
 npm run test:e2e
 ```
 
+## 📦 Основные модули
+
+- **Auth**: Регистрация, вход в систему, JWT-аутентификация.
+- **Users**: Профили пользователей, история просмотров.
+- **Posts**: Создание постов, лента новостей.
+- **Reels**: Короткие видеоролики.
+- **Uploads**: Загрузка и раздача статических файлов.
+
 ## 📁 Структура проекта
 
 Проект следует стандартной архитектуре NestJS:
@@ -78,3 +114,25 @@ npm run test:e2e
 ## 📝 Лицензия
 
 Этот проект является учебным/демонстрационным и не имеет специальной лицензии (UNLICENSED).
+
+## 📡 API Endpoints
+
+### Auth (`/auth`)
+- `POST /auth/register` — Регистрация нового пользователя
+- `POST /auth/login` — Авторизация и получение JWT токена
+
+### Posts (`/posts`)
+- `GET /posts` — Получение списка всех постов
+- `POST /posts` — Создание нового поста (требуется JWT, `multipart/form-data` с полем `file`)
+
+### Reels (`/reels`)
+- `GET /reels` — Получение списка всех рилсов
+- `GET /reels/:id` — Получение информации о конкретном рилсе
+- `POST /reels` — Загрузка нового рилса (требуется JWT, `multipart/form-data` с полем `file`, только видео)
+- `POST /reels/:id/watch` — Отметить рилс как просмотренный (требуется JWT)
+
+### Users (`/users`)
+- `GET /users/history/reels` — Получение истории просмотренных рилсов (требуется JWT)
+
+### App (`/`)
+- `GET /` — Проверка работоспособности API
