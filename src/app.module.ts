@@ -9,10 +9,12 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { PostsModule } from './posts/posts.module';
 import { ReelsModule } from './reels/reels.module';
+import { ChatModule } from './chat/chat.module';
 import { User } from './users/entities/user.entity';
 import { Post } from './posts/entities/post.entity';
 import { Reel } from './reels/entities/reel.entity';
 import { ReelHistory } from './users/entities/reel-history.entity';
+import { Message } from './chat/entities/message.entity';
 
 @Module({
   imports: [
@@ -28,7 +30,7 @@ import { ReelHistory } from './users/entities/reel-history.entity';
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL'),
-        entities: [User, Post, Reel, ReelHistory],
+        entities: [User, Post, Reel, ReelHistory, Message],
         synchronize: true, // В продакшене лучше использовать миграции
       }),
       inject: [ConfigService],
@@ -37,6 +39,7 @@ import { ReelHistory } from './users/entities/reel-history.entity';
     AuthModule,
     PostsModule,
     ReelsModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],
