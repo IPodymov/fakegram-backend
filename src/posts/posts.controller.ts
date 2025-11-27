@@ -7,6 +7,8 @@ import {
   Request,
   UseInterceptors,
   UploadedFile,
+  Param,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -46,5 +48,14 @@ export class PostsController {
   @Get()
   async findAll() {
     return this.postsService.findAll();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/like')
+  async toggleLike(
+    @Request() req: { user: { userId: number } },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.postsService.toggleLike(req.user.userId, id);
   }
 }

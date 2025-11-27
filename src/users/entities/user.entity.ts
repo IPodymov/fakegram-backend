@@ -9,6 +9,7 @@ import {
 import { Post } from '../../posts/entities/post.entity';
 import { Reel } from '../../reels/entities/reel.entity';
 import { ReelHistory } from './reel-history.entity';
+import { Follow } from './follow.entity';
 
 @Entity()
 export class User {
@@ -32,6 +33,12 @@ export class User {
 
   @OneToMany(() => ReelHistory, (history) => history.user)
   reelHistory: ReelHistory[];
+
+  @OneToMany(() => Follow, (follow) => follow.follower)
+  following: Follow[];
+
+  @OneToMany(() => Follow, (follow) => follow.following)
+  followers: Follow[];
 
   @CreateDateColumn()
   createdAt: Date;

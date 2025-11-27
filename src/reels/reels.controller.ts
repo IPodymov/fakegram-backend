@@ -72,4 +72,13 @@ export class ReelsController {
   ) {
     return this.reelsService.markAsWatched(req.user.userId, id);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/like')
+  async toggleLike(
+    @Request() req: { user: { userId: number } },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.reelsService.toggleLike(req.user.userId, id);
+  }
 }

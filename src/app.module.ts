@@ -15,6 +15,11 @@ import { Post } from './posts/entities/post.entity';
 import { Reel } from './reels/entities/reel.entity';
 import { ReelHistory } from './users/entities/reel-history.entity';
 import { Message } from './chat/entities/message.entity';
+import { CommentsModule } from './comments/comments.module';
+import { Comment } from './comments/entities/comment.entity';
+import { Follow } from './users/entities/follow.entity';
+import { PostLike } from './posts/entities/post-like.entity';
+import { ReelLike } from './reels/entities/reel-like.entity';
 
 @Module({
   imports: [
@@ -30,7 +35,7 @@ import { Message } from './chat/entities/message.entity';
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL'),
-        entities: [User, Post, Reel, ReelHistory, Message],
+        entities: [User, Post, Reel, ReelHistory, Message, Comment, Follow, PostLike, ReelLike],
         synchronize: true, // В продакшене лучше использовать миграции
       }),
       inject: [ConfigService],
@@ -40,6 +45,7 @@ import { Message } from './chat/entities/message.entity';
     PostsModule,
     ReelsModule,
     ChatModule,
+    CommentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

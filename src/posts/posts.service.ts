@@ -1,14 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreatePostDto } from './dto/create-post.dto';
 import { Post } from './entities/post.entity';
+import { PostLike } from './entities/post-like.entity';
 
 @Injectable()
 export class PostsService {
   constructor(
     @InjectRepository(Post)
     private postsRepository: Repository<Post>,
+    @InjectRepository(PostLike)
+    private postLikesRepository: Repository<PostLike>,
   ) {}
 
   async create(
@@ -32,7 +35,7 @@ export class PostsService {
 
   async findAll(): Promise<Post[]> {
     return this.postsRepository.find({
-      relations: ['author'],
+      relations: ['author', 'likes'],
       select: {
         author: {
           id: true,
@@ -41,5 +44,23 @@ export class PostsService {
         },
       },
     });
+  }
+
+  async toggleLike(userId: number, postId: number): Promise<void> {
+    const post = await this.postsRepository.findOne({ where: { id: postId } });
+    if (!post) {
+      throw new NotFoundException('Post not found');
+    }
+
+    const existingLike = await this.postLikesRepository.findOne({
+      where: { userId, postId },
+    });
+
+    if (existingLike) {
+      await this.postLikesRepository.remove(existingLike);
+    } else {
+      const like = this.postLikesRepository.create({ userId, postId });
+      await this.postLikesRepository.save(like);
+    }
   }
 }

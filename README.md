@@ -112,8 +112,27 @@ npm run test:e2e
 - **Users**: Профили пользователей, история просмотров.
 - **Posts**: Создание постов, лента новостей.
 - **Reels**: Короткие видеоролики.
+- **Comments**: Комментарии к постам и рилсам, ответы на комментарии.
 - **Chat**: Личные сообщения, обмен файлами.
 - **Uploads**: Загрузка и раздача статических файлов.
+
+## 🗄 Схема базы данных
+
+Основные сущности и их связи:
+
+- **User**: Пользователь. Имеет посты, рилсы, комментарии, лайки, сообщения.
+  - *OneToMany* -> Post, Reel, Comment, Like, Message, Follow
+- **Post**: Публикация.
+  - *ManyToOne* -> User (автор)
+  - *OneToMany* -> Comment, PostLike
+- **Reel**: Видео-публикация.
+  - *ManyToOne* -> User (автор)
+  - *OneToMany* -> Comment, ReelLike
+- **Comment**: Комментарий. Может принадлежать посту или рилсу. Поддерживает вложенность (ответы).
+  - *ManyToOne* -> User, Post, Reel, Comment (parent)
+- **Follow**: Подписка. Связывает двух пользователей (follower, following).
+- **Message**: Сообщение в чате.
+  - *ManyToOne* -> User (sender, receiver)
 
 ## 📁 Структура проекта
 
@@ -137,15 +156,26 @@ npm run test:e2e
 ### Posts (`/posts`)
 - `GET /posts` — Получение списка всех постов
 - `POST /posts` — Создание нового поста (требуется JWT, `multipart/form-data` с полем `file`)
+- `POST /posts/:id/like` — Поставить/убрать лайк посту (требуется JWT)
 
 ### Reels (`/reels`)
 - `GET /reels` — Получение списка всех рилсов
 - `GET /reels/:id` — Получение информации о конкретном рилсе
 - `POST /reels` — Загрузка нового рилса (требуется JWT, `multipart/form-data` с полем `file`, только видео)
 - `POST /reels/:id/watch` — Отметить рилс как просмотренный (требуется JWT)
+- `POST /reels/:id/like` — Поставить/убрать лайк рилсу (требуется JWT)
 
 ### Users (`/users`)
 - `GET /users/history/reels` — Получение истории просмотренных рилсов (требуется JWT)
+- `POST /users/:id/follow` — Подписаться на пользователя (требуется JWT)
+- `DELETE /users/:id/follow` — Отписаться от пользователя (требуется JWT)
+- `GET /users/:id/followers` — Получить список подписчиков
+- `GET /users/:id/following` — Получить список подписок
+
+### Comments (`/comments`)
+- `POST /comments` — Создать комментарий или ответ (требуется JWT)
+- `GET /comments/post/:id` — Получить комментарии к посту
+- `GET /comments/reel/:id` — Получить комментарии к рилсу
 
 ### Chat (`/chat`)
 - `POST /chat/send` — Отправка сообщения (требуется JWT, поддерживает `multipart/form-data` для файлов)
