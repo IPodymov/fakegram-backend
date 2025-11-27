@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { CreatePostDto } from './dto/create-post.dto';
 import { Post } from './entities/post.entity';
 import { PostLike } from './entities/post-like.entity';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/entities/notification.entity';
 
 @Injectable()
 export class PostsService {
@@ -12,6 +14,7 @@ export class PostsService {
     private postsRepository: Repository<Post>,
     @InjectRepository(PostLike)
     private postLikesRepository: Repository<PostLike>,
+    private notificationsService: NotificationsService,
   ) {}
 
   async create(
@@ -61,6 +64,13 @@ export class PostsService {
     } else {
       const like = this.postLikesRepository.create({ userId, postId });
       await this.postLikesRepository.save(like);
+
+      await this.notificationsService.create(
+        post.authorId,
+        userId,
+        NotificationType.LIKE_POST,
+        postId,
+      );
     }
   }
 }

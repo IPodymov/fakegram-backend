@@ -5,9 +5,10 @@ import { UsersController } from './users.controller';
 import { User } from './entities/user.entity';
 import { ReelHistory } from './entities/reel-history.entity';
 import { Follow } from './entities/follow.entity';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, ReelHistory, Follow])],
+  imports: [TypeOrmModule.forFeature([User, ReelHistory, Follow]), NotificationsModule],
   controllers: [UsersController],
   providers: [UsersService],
   exports: [UsersService],

@@ -5,6 +5,8 @@ import { Reel } from './entities/reel.entity';
 import { CreateReelDto } from './dto/create-reel.dto';
 import { ReelHistory } from '../users/entities/reel-history.entity';
 import { ReelLike } from './entities/reel-like.entity';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/entities/notification.entity';
 
 @Injectable()
 export class ReelsService {
@@ -15,6 +17,7 @@ export class ReelsService {
     private reelHistoryRepository: Repository<ReelHistory>,
     @InjectRepository(ReelLike)
     private reelLikesRepository: Repository<ReelLike>,
+    private notificationsService: NotificationsService,
   ) {}
 
   async create(
@@ -67,6 +70,13 @@ export class ReelsService {
     } else {
       const like = this.reelLikesRepository.create({ userId, reelId });
       await this.reelLikesRepository.save(like);
+
+      await this.notificationsService.create(
+        reel.authorId,
+        userId,
+        NotificationType.LIKE_REEL,
+        reelId,
+      );
     }
   }
 }

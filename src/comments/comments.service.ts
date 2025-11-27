@@ -7,12 +7,21 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { Comment } from './entities/comment.entity';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { Post } from '../posts/entities/post.entity';
+import { Reel } from '../reels/entities/reel.entity';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/entities/notification.entity';
 
 @Injectable()
 export class CommentsService {
   constructor(
     @InjectRepository(Comment)
     private commentsRepository: Repository<Comment>,
+    @InjectRepository(Post)
+    private postsRepository: Repository<Post>,
+    @InjectRepository(Reel)
+    private reelsRepository: Repository<Reel>,
+    private notificationsService: NotificationsService,
   ) {}
 
   async create(
@@ -27,7 +36,47 @@ export class CommentsService {
       ...createCommentDto,
       authorId: userId,
     });
-    return this.commentsRepository.save(comment);
+    const savedComment = await this.commentsRepository.save(comment);
+
+    if (createCommentDto.parentId) {
+      const parentComment = await this.commentsRepository.findOne({
+        where: { id: createCommentDto.parentId },
+      });
+      if (parentComment && parentComment.authorId !== userId) {
+        await this.notificationsService.create(
+          parentComment.authorId,
+          userId,
+          NotificationType.REPLY_COMMENT,
+          savedComment.id,
+        );
+      }
+    } else if (createCommentDto.postId) {
+      const post = await this.postsRepository.findOne({
+        where: { id: createCommentDto.postId },
+      });
+      if (post && post.authorId !== userId) {
+        await this.notificationsService.create(
+          post.authorId,
+          userId,
+          NotificationType.COMMENT_POST,
+          createCommentDto.postId,
+        );
+      }
+    } else if (createCommentDto.reelId) {
+      const reel = await this.reelsRepository.findOne({
+        where: { id: createCommentDto.reelId },
+      });
+      if (reel && reel.authorId !== userId) {
+        await this.notificationsService.create(
+          reel.authorId,
+          userId,
+          NotificationType.COMMENT_REEL,
+          createCommentDto.reelId,
+        );
+      }
+    }
+
+    return savedComment;
   }
 
   async findByPost(postId: number): Promise<Comment[]> {

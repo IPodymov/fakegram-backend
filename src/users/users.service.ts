@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { ReelHistory } from './entities/reel-history.entity';
 import { Follow } from './entities/follow.entity';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationType } from '../notifications/entities/notification.entity';
 
 @Injectable()
 export class UsersService {
@@ -14,6 +16,7 @@ export class UsersService {
     private reelHistoryRepository: Repository<ReelHistory>,
     @InjectRepository(Follow)
     private followRepository: Repository<Follow>,
+    private notificationsService: NotificationsService,
   ) {}
 
   async findOne(email: string): Promise<User | null> {
@@ -60,6 +63,12 @@ export class UsersService {
       followingId,
     });
     await this.followRepository.save(follow);
+
+    await this.notificationsService.create(
+      followingId,
+      followerId,
+      NotificationType.FOLLOW,
+    );
   }
 
   async unfollow(followerId: number, followingId: number): Promise<void> {

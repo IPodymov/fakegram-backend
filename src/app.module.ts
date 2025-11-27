@@ -21,6 +21,9 @@ import { Follow } from './users/entities/follow.entity';
 import { PostLike } from './posts/entities/post-like.entity';
 import { ReelLike } from './reels/entities/reel-like.entity';
 
+import { NotificationsModule } from './notifications/notifications.module';
+import { Notification } from './notifications/entities/notification.entity';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -35,7 +38,7 @@ import { ReelLike } from './reels/entities/reel-like.entity';
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL'),
-        entities: [User, Post, Reel, ReelHistory, Message, Comment, Follow, PostLike, ReelLike],
+        entities: [User, Post, Reel, ReelHistory, Message, Comment, Follow, PostLike, ReelLike, Notification],
         synchronize: true, // В продакшене лучше использовать миграции
       }),
       inject: [ConfigService],
@@ -46,6 +49,7 @@ import { ReelLike } from './reels/entities/reel-like.entity';
     ReelsModule,
     ChatModule,
     CommentsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
