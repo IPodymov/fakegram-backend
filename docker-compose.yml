@@ -8,7 +8,7 @@ services:
     ports:
       - '${PORT}:${PORT}'
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/fakegram?schema=public
+      DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
     volumes:
       - ./uploads:/usr/src/app/uploads
@@ -19,7 +19,7 @@ services:
   db:
     image: postgres:15-alpine
     ports:
-      - '5435:5432'
+      - '5432:5432'
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
