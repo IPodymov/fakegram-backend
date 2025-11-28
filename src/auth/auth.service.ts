@@ -16,18 +16,22 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async register(registerDto: RegisterDto) {
+  async register(registerDto: RegisterDto, file?: Express.Multer.File) {
     const existingUser = await this.usersService.findOne(registerDto.email);
     if (existingUser) {
       throw new ConflictException('User already exists');
     }
 
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
-    const user = await this.usersService.create({
+    let user = await this.usersService.create({
       email: registerDto.email,
       password: hashedPassword,
       name: registerDto.name,
     });
+
+    if (file) {
+      user = await this.usersService.updateAvatar(user.id, file);
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...result } = user;

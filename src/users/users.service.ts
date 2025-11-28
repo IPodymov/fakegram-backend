@@ -6,6 +6,9 @@ import { ReelHistory } from './entities/reel-history.entity';
 import { Follow } from './entities/follow.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../notifications/entities/notification.entity';
+import * as fs from 'fs';
+import * as path from 'path';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class UsersService {
@@ -29,6 +32,34 @@ export class UsersService {
 
   async create(data: Partial<User>): Promise<User> {
     const user = this.usersRepository.create(data);
+    return this.usersRepository.save(user);
+  }
+
+  async updateAvatar(userId: number, file: Express.Multer.File): Promise<User> {
+    const user = await this.findById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const uploadDir = path.join(__dirname, '..', '..', 'uploads', 'avatars');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const fileName = `${uuidv4()}${path.extname(file.originalname)}`;
+    const filePath = path.join(uploadDir, fileName);
+
+    fs.writeFileSync(filePath, file.buffer);
+
+    // Delete old avatar if exists
+    if (user.avatarUrl) {
+      const oldAvatarPath = path.join(__dirname, '..', '..', user.avatarUrl);
+      if (fs.existsSync(oldAvatarPath)) {
+        fs.unlinkSync(oldAvatarPath);
+      }
+    }
+
+    user.avatarUrl = `/uploads/avatars/${fileName}`;
     return this.usersRepository.save(user);
   }
 

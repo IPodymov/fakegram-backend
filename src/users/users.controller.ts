@@ -1,10 +1,33 @@
-import { Controller, Get, UseGuards, Request, Post, Delete, Param, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  UseGuards,
+  Request,
+  Post,
+  Delete,
+  Param,
+  ParseIntPipe,
+  Patch,
+  UseInterceptors,
+  UploadedFile,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('avatar')
+  @UseInterceptors(FileInterceptor('file'))
+  async updateAvatar(
+    @Request() req: { user: { userId: number } },
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.usersService.updateAvatar(req.user.userId, file);
+  }
 
   @UseGuards(JwtAuthGuard)
   @Get('history/reels')
