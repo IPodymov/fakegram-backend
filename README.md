@@ -27,8 +27,6 @@ Instagram Clone REST API построенный на NestJS, TypeORM и PostgreS
 
 ## 📦 Установка
 
-## 📦 Установка
-
 ```bash
 # Клонирование репозитория
 git clone https://github.com/IPodymov/fakegram-backend.git
