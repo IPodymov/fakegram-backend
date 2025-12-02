@@ -5,24 +5,27 @@ Instagram Clone REST API построенный на NestJS, TypeORM и PostgreS
 ## 📋 Описание
 
 Полнофункциональный backend для социальной сети в стиле Instagram с поддержкой:
-- Регистрации и аутентификации пользователей
-- Постов с фото/видео
+- Регистрации и аутентификации пользователей (JWT)
+- Постов с фото/видео и возможностью загрузки изображений
 - Историй (stories) с 24-часовым сроком действия
 - Комментариев и лайков
 - Системы подписок (followers/following)
 - Личных сообщений
 - Уведомлений
 - Reels (короткие видео)
+- Двухфакторной аутентификации через email (опционально)
+- Загрузки фотографий профиля
 
 ## 🚀 Технологический стек
 
 - **Framework**: NestJS 11
 - **Language**: TypeScript
-- **Database**: PostgreSQL
+- **Database**: PostgreSQL (Railway)
 - **ORM**: TypeORM 0.3
 - **Authentication**: JWT (JSON Web Tokens)
 - **Validation**: class-validator, class-transformer
 - **Password Hashing**: bcrypt
+- **File Upload**: Multer
 - **Testing**: Jest
 
 ## 📦 Установка
@@ -48,11 +51,7 @@ cp .env.example .env
 
 ```env
 # Database
-DB_HOST=your-database-host
-DB_PORT=5432
-DB_USERNAME=postgres
-DB_PASSWORD=your-password
-DB_DATABASE=fakegram
+DATABASE_URL=postgresql://user:password@host:port/database
 
 # JWT
 JWT_SECRET=your-secret-key-change-in-production
@@ -61,6 +60,7 @@ JWT_EXPIRATION=7d
 # App
 PORT=3000
 NODE_ENV=development
+CORS_ORIGIN=*
 ```
 
 ## 🏃 Запуск приложения
@@ -84,6 +84,9 @@ npm run start:debug
 ### Таблицы
 
 - **users** - Пользователи системы
+  - Поддержка 2FA (опционально)
+  - Загрузка фотографий профиля
+  - Валидация username (только английские буквы, цифры, _, .)
 - **posts** - Посты с фото/видео
 - **stories** - Истории (24 часа)
 - **comments** - Комментарии к постам
@@ -133,6 +136,11 @@ Content-Type: application/json
 }
 ```
 
+**Правила валидации:**
+- `username`: минимум 3 символа, только английские буквы, цифры, подчеркивание и точка
+- `email`: валидный email адрес
+- `password`: минимум 6 символов
+
 **Response (201):**
 ```json
 {
@@ -174,6 +182,7 @@ Content-Type: application/json
     "id": "uuid",
     "username": "john_doe",
     "email": "john@example.com",
+    "twoFactorEnabled": false,
     ...
   }
 }
@@ -181,6 +190,28 @@ Content-Type: application/json
 
 **Errors:**
 - `401 Unauthorized` - Неверные учетные данные
+
+#### Включение/выключение 2FA (опционально)
+```http
+PATCH /auth/toggle-2fa
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "enable": true
+}
+```
+
+#### Подтверждение 2FA кода (опционально)
+```http
+POST /auth/verify-2fa
+Content-Type: application/json
+
+{
+  "email": "john@example.com",
+  "code": "123456"
+}
+```
 
 ---
 
@@ -200,7 +231,7 @@ GET /users
     "email": "john@example.com",
     "fullName": "John Doe",
     "bio": "Photography enthusiast",
-    "profilePictureUrl": "https://...",
+    "profilePictureUrl": "/uploads/profile-pictures/...",
     "website": "https://johndoe.com",
     "isPrivate": false,
     "createdAt": "2025-12-01T10:00:00.000Z"
@@ -218,32 +249,38 @@ GET /users/:id
 GET /users/username/:username
 ```
 
-#### Создать пользователя
-```http
-POST /users
-Content-Type: application/json
-
-{
-  "username": "jane_doe",
-  "email": "jane@example.com",
-  "passwordHash": "hashed_password",
-  "fullName": "Jane Doe",
-  "bio": "Travel blogger",
-  "isPrivate": false
-}
-```
-
 #### Обновить пользователя
 ```http
 PUT /users/:id
 Content-Type: application/json
 
 {
+  "username": "new_username",
   "fullName": "Jane Smith",
   "bio": "Updated bio",
-  "profilePictureUrl": "https://...",
   "website": "https://janesmith.com",
   "isPrivate": true
+}
+```
+
+**Примечание:** Username должен содержать только английские буквы, цифры, подчеркивание и точку.
+
+#### Загрузить фото профиля
+```http
+PATCH /users/:id/profile-picture
+Content-Type: multipart/form-data
+
+file: <image-file>
+```
+
+**Ограничения:**
+- Максимальный размер: 5MB
+- Форматы: jpg, jpeg, png, gif, webp
+
+**Response (200):**
+```json
+{
+  "profilePictureUrl": "/uploads/profile-pictures/user-id-timestamp.jpg"
 }
 ```
 
@@ -432,9 +469,7 @@ fakegram-backend/
 ├── src/
 │   ├── common/                 # Общие модули
 │   │   ├── decorators/        # Декораторы (@CurrentUser)
-│   │   ├── guards/            # Guards (JwtAuthGuard)
-│   │   ├── filters/           # Exception фильтры
-│   │   └── interceptors/      # Interceptors
+│   │   └── guards/            # Guards (JwtAuthGuard)
 │   ├── config/                # Конфигурация
 │   │   ├── database.config.ts # Настройки БД
 │   │   └── jwt.config.ts      # Настройки JWT
@@ -452,77 +487,115 @@ fakegram-backend/
 │   ├── modules/               # Функциональные модули
 │   │   ├── auth/             # Аутентификация
 │   │   │   ├── dto/          # Data Transfer Objects
+│   │   │   │   ├── login.dto.ts
+│   │   │   │   ├── register.dto.ts
+│   │   │   │   ├── enable-2fa.dto.ts
+│   │   │   │   └── verify-2fa.dto.ts
 │   │   │   ├── auth.controller.ts
 │   │   │   ├── auth.service.ts
 │   │   │   └── auth.module.ts
 │   │   ├── users/            # Пользователи
-│   │   ├── posts/            # Посты
-│   │   ├── stories/          # Истории
-│   │   ├── comments/         # Комментарии
-│   │   ├── likes/            # Лайки
-│   │   ├── followers/        # Подписки
-│   │   ├── messages/         # Сообщения
-│   │   ├── notifications/    # Уведомления
-│   │   └── reels/            # Reels
+│   │   │   ├── dto/
+│   │   │   │   └── update-user.dto.ts
+│   │   │   ├── users.controller.ts
+│   │   │   ├── users.service.ts
+│   │   │   └── users.module.ts
+│   │   └── posts/            # Посты
+│   │       ├── dto/
+│   │       │   ├── create-post.dto.ts
+│   │       │   └── update-post.dto.ts
+│   │       ├── posts.controller.ts
+│   │       ├── posts.service.ts
+│   │       └── posts.module.ts
 │   ├── app.module.ts         # Корневой модуль
 │   └── main.ts               # Entry point
+├── uploads/                   # Загруженные файлы (gitignored)
+│   └── profile-pictures/
 ├── test/                      # Тесты
+├── .env                       # Переменные окружения (gitignored)
 ├── .env.example              # Пример env файла
+├── API.md                    # Подробная API документация
+├── 2FA_IMPLEMENTATION.md     # Документация по 2FA
+├── UPLOAD_IMAGES.md          # Документация по загрузке изображений
 ├── package.json
 └── tsconfig.json
 ```
 
 ## 🔧 Валидация данных
 
-Проект использует `class-validator` для валидации входных данных:
+Проект использует `class-validator` и глобальный `ValidationPipe` для валидации входных данных:
 
 ### RegisterDto
-- `username`: минимум 3 символа, обязательное
-- `email`: валидный email, обязательное
-- `password`: минимум 6 символов, обязательное
+- `username`: минимум 3 символа, только английские буквы, цифры, подчеркивание и точка
+- `email`: валидный email адрес
+- `password`: минимум 6 символов
 
 ### LoginDto
-- `username`: строка, обязательное
-- `password`: строка, обязательное
+- `username`: строка (для входа используется username)
+- `password`: строка
 
-### UpdateUserDto
-- `fullName`: строка, опциональное
-- `bio`: строка, опциональное
-- `profilePictureUrl`: валидный URL, опциональное
-- `website`: валидный URL, опциональное
-- `isPrivate`: boolean, опциональное
+### UpdateUserDto (все поля опциональны)
+- `username`: минимум 3 символа, только английские буквы, цифры, _, .
+- `fullName`: строка
+- `bio`: строка
+- `website`: строка
+- `isPrivate`: boolean
 
 ### CreatePostDto
-- `userId`: строка, обязательное
-- `mediaUrl`: валидный URL, обязательное
-- `caption`: строка, опциональное
-- `isVideo`: boolean, опциональное
-- `location`: строка, опциональное
+- `userId`: строка UUID
+- `mediaUrl`: валидный URL
+- `caption`: строка (опционально)
+- `isVideo`: boolean (опционально)
+- `location`: строка (опционально)
 
 ## 🛡️ Безопасность
 
 - Пароли хешируются с использованием bcrypt (10 rounds)
 - JWT токены с настраиваемым временем жизни (по умолчанию 7 дней)
 - Проверка уникальности username и email при регистрации
-- Валидация всех входных данных
+- Валидация всех входных данных с `whitelist` и `forbidNonWhitelisted`
 - TypeORM параметризованные запросы (защита от SQL-инъекций)
-- CORS настройки
+- CORS настройки с возможностью ограничения origin
+- Загрузка файлов: ограничение размера (5MB) и типов файлов
+
+## 🚀 Расширенные функции
+
+### Двухфакторная аутентификация (2FA)
+- Опциональная 2FA через email
+- 6-значные коды с истечением через 10 минут
+- См. [2FA_IMPLEMENTATION.md](./2FA_IMPLEMENTATION.md)
+
+### Загрузка изображений
+- Загрузка фотографий профиля через multipart/form-data
+- Локальное хранение в `uploads/profile-pictures/`
+- Автоматическая генерация имён файлов
+- См. [UPLOAD_IMAGES.md](./UPLOAD_IMAGES.md)
+
+### Валидация username
+- Только английские буквы (a-z, A-Z)
+- Цифры (0-9)
+- Подчеркивание (_) и точка (.)
+- Минимум 3 символа
+- Уникальность проверяется при регистрации и обновлении
 
 ## 📈 Планируемые функции
 
 - [ ] WebSocket для real-time чата и уведомлений
-- [ ] Загрузка файлов (локально и в S3)
+- [ ] Облачное хранилище (AWS S3, Cloudinary)
 - [ ] Пагинация для списков
 - [ ] Rate limiting
 - [ ] Email верификация
-- [ ] Двухфакторная аутентификация
+- [x] Двухфакторная аутентификация (базовая реализация)
 - [ ] Расширенный поиск
 - [ ] Рекомендательная система
 - [ ] Аналитика и статистика
 
-## 📝 Документация API
+## 📝 Документация
 
-Подробная документация API доступна в файле [API.md](./API.md)
+- [API.md](./API.md) - Подробная документация всех API endpoints
+- [2FA_IMPLEMENTATION.md](./2FA_IMPLEMENTATION.md) - Руководство по двухфакторной аутентификации
+- [UPLOAD_IMAGES.md](./UPLOAD_IMAGES.md) - Руководство по загрузке изображений
+- [STRUCTURE.md](./STRUCTURE.md) - Структура проекта
 
 ## 🤝 Contributing
 
@@ -530,7 +603,7 @@ Contributions, issues and feature requests приветствуются!
 
 ## 📄 Лицензия
 
-[MIT](LICENSE)
+UNLICENSED
 
 ## 👨‍💻 Автор
 
@@ -540,27 +613,6 @@ Contributions, issues and feature requests приветствуются!
 ---
 
 ⭐️ Если проект был полезен, поставьте звездочку!
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
 
 ## Resources
 
