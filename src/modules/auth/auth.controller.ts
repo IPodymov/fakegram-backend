@@ -29,30 +29,18 @@ export class AuthController {
 
   @Post('login')
   @UsePipes(new ValidationPipe({ transform: true }))
-  async login(
-    @Body() loginDto: LoginDto,
-  ): Promise<LoginResponse | { message: string; requires2FA: boolean }> {
+  async login(@Body() loginDto: LoginDto): Promise<LoginResponse> {
     try {
       const user = await this.authService.validateUser(
-        loginDto.email,
+        loginDto.username,
         loginDto.password,
       );
 
       if (!user) {
         throw new HttpException(
-          'Invalid email or password',
+          'Invalid username or password',
           HttpStatus.UNAUTHORIZED,
         );
-      }
-
-      // Проверка, включена ли 2FA
-      const fullUser = await this.authService.findByEmail(loginDto.email);
-      if (fullUser?.twoFactorEnabled) {
-        await this.authService.initiate2FA(loginDto.email);
-        return {
-          message: 'Verification code sent to your email',
-          requires2FA: true,
-        };
       }
 
       return this.authService.login(user);
