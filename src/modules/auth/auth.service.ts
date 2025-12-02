@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-redundant-type-constituents */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -8,6 +9,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { User } from '../../entities/user.entity';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 
 export interface UserWithoutPassword {
   id: string;
@@ -18,12 +20,14 @@ export interface UserWithoutPassword {
   profilePictureUrl: string | null;
   website: string | null;
   isPrivate: boolean;
+  twoFactorEnabled: boolean;
   createdAt: Date;
 }
 
 export interface LoginResponse {
   access_token: string;
   user: UserWithoutPassword;
+  requires2FA?: boolean;
 }
 
 @Injectable()
@@ -34,10 +38,10 @@ export class AuthService {
   ) {}
 
   async validateUser(
-    username: string,
+    email: string,
     password: string,
   ): Promise<UserWithoutPassword | null> {
-    const user = await this.usersService.findByUsername(username);
+    const user = await this.usersService.findByEmail(email);
 
     if (!user) {
       return null;
@@ -92,7 +96,89 @@ export class AuthService {
   }
 
   private excludePassword(user: User): UserWithoutPassword {
-    const { passwordHash, ...userWithoutPassword } = user;
+    const {
+      passwordHash,
+      twoFactorCode,
+      twoFactorCodeExpiresAt,
+      ...userWithoutPassword
+    } = user;
     return userWithoutPassword as UserWithoutPassword;
+  }
+
+  // Генерация 6-значного кода для 2FA
+  generateVerificationCode(): string {
+    return crypto.randomInt(100000, 999999).toString();
+  }
+
+  // Отправка кода на email (заглушка - нужно интегрировать email-сервис)
+  async sendVerificationCode(email: string, code: string): Promise<void> {
+    // TODO: Интегрировать email-сервис (nodemailer, SendGrid, AWS SES и т.д.)
+    console.log(`Sending verification code ${code} to ${email}`);
+    // В продакшене здесь должна быть реальная отправка email
+  }
+
+  // Включение/выключение 2FA для пользователя
+  async toggle2FA(
+    userId: string,
+    enable: boolean,
+  ): Promise<{ message: string }> {
+    await this.usersService.update(userId, { twoFactorEnabled: enable });
+    return {
+      message: enable
+        ? '2FA enabled successfully'
+        : '2FA disabled successfully',
+    };
+  }
+
+  // Создание и отправка кода 2FA при логине
+  async initiate2FA(email: string): Promise<{ message: string }> {
+    const user = await this.usersService.findByEmail(email);
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const code = this.generateVerificationCode();
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 10); // Код действителен 10 минут
+
+    await this.usersService.update(user.id, {
+      twoFactorCode: code,
+      twoFactorCodeExpiresAt: expiresAt,
+    });
+
+    await this.sendVerificationCode(email, code);
+
+    return { message: 'Verification code sent to your email' };
+  }
+
+  // Проверка кода 2FA
+  async verify2FACode(email: string, code: string): Promise<LoginResponse> {
+    const user = await this.usersService.findByEmail(email);
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (!user.twoFactorCode || !user.twoFactorCodeExpiresAt) {
+      throw new Error('No verification code found');
+    }
+
+    if (new Date() > user.twoFactorCodeExpiresAt) {
+      throw new Error('Verification code expired');
+    }
+
+    if (user.twoFactorCode !== code) {
+      throw new Error('Invalid verification code');
+    }
+
+    // Очистка кода после успешной верификации
+    await this.usersService.update(user.id, {
+      twoFactorCode: null,
+      twoFactorCodeExpiresAt: null,
+    });
+
+    const userWithoutPassword = this.excludePassword(user);
+    return this.login(userWithoutPassword);
   }
 }

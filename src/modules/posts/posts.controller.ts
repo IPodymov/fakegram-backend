@@ -1,6 +1,8 @@
 import { Controller, Get, Post, Body, Param, Put, Delete, Query } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { Post as PostEntity } from '../../entities/post.entity';
+import { CreatePostDto } from './dto/create-post.dto';
+import { UpdatePostDto } from './dto/update-post.dto';
 
 @Controller('posts')
 export class PostsController {
@@ -20,13 +22,13 @@ export class PostsController {
   }
 
   @Post()
-  create(@Body() postData: Partial<PostEntity>): Promise<PostEntity> {
-    return this.postsService.create(postData);
+  create(@Body() createPostDto: CreatePostDto): Promise<PostEntity> {
+    return this.postsService.create(createPostDto);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() postData: Partial<PostEntity>): Promise<PostEntity> {
-    return this.postsService.update(id, postData);
+  update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto): Promise<PostEntity> {
+    return this.postsService.update(id, updatePostDto);
   }
 
   @Delete(':id')

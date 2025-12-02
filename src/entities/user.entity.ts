@@ -44,6 +44,15 @@ export class User {
   @Column({ name: 'is_private', default: false })
   isPrivate: boolean;
 
+  @Column({ name: 'two_factor_enabled', default: false })
+  twoFactorEnabled: boolean;
+
+  @Column({ name: 'two_factor_code', nullable: true })
+  twoFactorCode: string;
+
+  @Column({ name: 'two_factor_code_expires_at', nullable: true })
+  twoFactorCodeExpiresAt: Date;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
