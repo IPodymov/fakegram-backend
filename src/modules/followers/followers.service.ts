@@ -1,17 +1,31 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
 import { Follower } from '../../entities/follower.entity';
 import { User } from '../../entities/user.entity';
 
 @Injectable()
 export class FollowersService {
+  private readonly baseUrl: string;
+
   constructor(
     @InjectRepository(Follower)
     private followersRepository: Repository<Follower>,
     @InjectRepository(User)
     private usersRepository: Repository<User>,
-  ) {}
+    private configService: ConfigService,
+  ) {
+    this.baseUrl =
+      this.configService.get<string>('BASE_URL') || 'http://localhost:3000';
+  }
+
+  private formatUserUrls(user: User): User {
+    if (user.profilePictureUrl && !user.profilePictureUrl.startsWith('http')) {
+      user.profilePictureUrl = `${this.baseUrl}${user.profilePictureUrl}`;
+    }
+    return user;
+  }
 
   async follow(followerId: string, followingId: string): Promise<Follower> {
     // Проверка что пользователь не подписывается сам на себя
@@ -64,9 +78,15 @@ export class FollowersService {
     });
 
     return followers.map((f) => {
-      const { passwordHash, twoFactorCode, twoFactorCodeExpiresAt, ...user } =
-        f.follower;
-      return user as User;
+      /* eslint-disable @typescript-eslint/no-unused-vars */
+      const {
+        passwordHash: _passwordHash,
+        twoFactorCode: _twoFactorCode,
+        twoFactorCodeExpiresAt: _twoFactorCodeExpiresAt,
+        ...user
+      } = f.follower;
+      /* eslint-enable @typescript-eslint/no-unused-vars */
+      return this.formatUserUrls(user as User);
     });
   }
 
@@ -77,9 +97,15 @@ export class FollowersService {
     });
 
     return following.map((f) => {
-      const { passwordHash, twoFactorCode, twoFactorCodeExpiresAt, ...user } =
-        f.following;
-      return user as User;
+      /* eslint-disable @typescript-eslint/no-unused-vars */
+      const {
+        passwordHash: _passwordHash,
+        twoFactorCode: _twoFactorCode,
+        twoFactorCodeExpiresAt: _twoFactorCodeExpiresAt,
+        ...user
+      } = f.following;
+      /* eslint-enable @typescript-eslint/no-unused-vars */
+      return this.formatUserUrls(user as User);
     });
   }
 

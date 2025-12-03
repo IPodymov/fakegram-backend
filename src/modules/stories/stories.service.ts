@@ -1,36 +1,66 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
 import { Story } from '../../entities/story.entity';
 import { FileUtils } from '../../common/utils/file.utils';
 
 @Injectable()
 export class StoriesService {
+  private readonly baseUrl: string;
+
   constructor(
     @InjectRepository(Story)
     private storiesRepository: Repository<Story>,
-  ) {}
+    private configService: ConfigService,
+  ) {
+    this.baseUrl =
+      this.configService.get<string>('BASE_URL') || 'http://localhost:3000';
+  }
+
+  private formatStoryUrls(story: Story): Story {
+    const formattedStory = { ...story };
+
+    if (formattedStory.mediaUrl && !formattedStory.mediaUrl.startsWith('http')) {
+      formattedStory.mediaUrl = `${this.baseUrl}${formattedStory.mediaUrl}`;
+    }
+
+    if (formattedStory.user) {
+      formattedStory.user = { ...formattedStory.user };
+      if (
+        formattedStory.user.profilePictureUrl &&
+        !formattedStory.user.profilePictureUrl.startsWith('http')
+      ) {
+        formattedStory.user.profilePictureUrl = `${this.baseUrl}${formattedStory.user.profilePictureUrl}`;
+      }
+    }
+
+    return formattedStory;
+  }
 
   async findAll(): Promise<Story[]> {
-    return this.storiesRepository.find({
+    const stories = await this.storiesRepository.find({
       relations: ['user'],
       order: { createdAt: 'DESC' },
     });
+    return stories.map((story) => this.formatStoryUrls(story));
   }
 
   async findOne(id: string): Promise<Story | null> {
-    return this.storiesRepository.findOne({
+    const story = await this.storiesRepository.findOne({
       where: { id },
       relations: ['user'],
     });
+    return story ? this.formatStoryUrls(story) : null;
   }
 
   async findByUserId(userId: string): Promise<Story[]> {
-    return this.storiesRepository.find({
+    const stories = await this.storiesRepository.find({
       where: { userId },
       relations: ['user'],
       order: { createdAt: 'DESC' },
     });
+    return stories.map((story) => this.formatStoryUrls(story));
   }
 
   async create(storyData: Partial<Story>, userId: string): Promise<Story> {
@@ -50,7 +80,8 @@ export class StoriesService {
       mediaUrl,
       userId,
     });
-    return this.storiesRepository.save(story);
+    const savedStory = await this.storiesRepository.save(story);
+    return this.findOne(savedStory.id);
   }
 
   async remove(id: string): Promise<void> {

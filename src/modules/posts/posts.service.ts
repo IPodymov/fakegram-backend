@@ -1,15 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
 import { Post } from '../../entities/post.entity';
 import { FileUtils } from '../../common/utils/file.utils';
 
 @Injectable()
 export class PostsService {
+  private readonly baseUrl: string;
+
   constructor(
     @InjectRepository(Post)
     private postsRepository: Repository<Post>,
-  ) {}
+    private configService: ConfigService,
+  ) {
+    this.baseUrl =
+      this.configService.get<string>('BASE_URL') || 'http://localhost:3000';
+  }
 
   async findAll(): Promise<Post[]> {
     const posts = await this.postsRepository.find({
@@ -35,16 +42,23 @@ export class PostsService {
   }
 
   private formatPostUrls(post: Post): Post {
-    if (post.mediaUrl && !post.mediaUrl.startsWith('http')) {
-      post.mediaUrl = `http://localhost:3000${post.mediaUrl}`;
+    const formattedPost = { ...post };
+
+    if (formattedPost.mediaUrl && !formattedPost.mediaUrl.startsWith('http')) {
+      formattedPost.mediaUrl = `${this.baseUrl}${formattedPost.mediaUrl}`;
     }
-    if (
-      post.user?.profilePictureUrl &&
-      !post.user.profilePictureUrl.startsWith('http')
-    ) {
-      post.user.profilePictureUrl = `http://localhost:3000${post.user.profilePictureUrl}`;
+
+    if (formattedPost.user) {
+      formattedPost.user = { ...formattedPost.user };
+      if (
+        formattedPost.user.profilePictureUrl &&
+        !formattedPost.user.profilePictureUrl.startsWith('http')
+      ) {
+        formattedPost.user.profilePictureUrl = `${this.baseUrl}${formattedPost.user.profilePictureUrl}`;
+      }
     }
-    return post;
+
+    return formattedPost;
   }
 
   async create(postData: Partial<Post>, userId: string): Promise<Post> {
