@@ -12,23 +12,39 @@ export class PostsService {
   ) {}
 
   async findAll(): Promise<Post[]> {
-    return this.postsRepository.find({
+    const posts = await this.postsRepository.find({
       relations: ['user', 'comments', 'likes'],
     });
+    return posts.map((post) => this.formatPostUrls(post));
   }
 
   async findOne(id: string): Promise<Post | null> {
-    return this.postsRepository.findOne({
+    const post = await this.postsRepository.findOne({
       where: { id },
       relations: ['user', 'comments', 'likes'],
     });
+    return post ? this.formatPostUrls(post) : null;
   }
 
   async findByUserId(userId: string): Promise<Post[]> {
-    return this.postsRepository.find({
+    const posts = await this.postsRepository.find({
       where: { userId },
       relations: ['user', 'comments', 'likes'],
     });
+    return posts.map((post) => this.formatPostUrls(post));
+  }
+
+  private formatPostUrls(post: Post): Post {
+    if (post.mediaUrl && !post.mediaUrl.startsWith('http')) {
+      post.mediaUrl = `http://localhost:3000${post.mediaUrl}`;
+    }
+    if (
+      post.user?.profilePictureUrl &&
+      !post.user.profilePictureUrl.startsWith('http')
+    ) {
+      post.user.profilePictureUrl = `http://localhost:3000${post.user.profilePictureUrl}`;
+    }
+    return post;
   }
 
   async create(postData: Partial<Post>, userId: string): Promise<Post> {
@@ -49,12 +65,13 @@ export class PostsService {
       mediaUrl,
       userId,
     });
-    return this.postsRepository.save(post);
+    const savedPost = await this.postsRepository.save(post);
+    return this.findOne(savedPost.id);
   }
 
   async update(id: string, postData: Partial<Post>): Promise<Post> {
     // Обрабатываем base64 изображение при обновлении
-    let updateData = { ...postData };
+    const updateData = { ...postData };
     if (updateData.mediaUrl && updateData.mediaUrl.startsWith('data:image')) {
       try {
         updateData.mediaUrl = FileUtils.saveBase64Image(
