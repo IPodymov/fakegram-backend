@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Follower } from '../../entities/follower.entity';
 import { User } from '../../entities/user.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class FollowersService {
@@ -15,6 +16,7 @@ export class FollowersService {
     @InjectRepository(User)
     private usersRepository: Repository<User>,
     private configService: ConfigService,
+    private notificationsService: NotificationsService,
   ) {
     this.baseUrl =
       this.configService.get<string>('BASE_URL') || 'http://localhost:3000';
@@ -41,6 +43,11 @@ export class FollowersService {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
+    // Получаем информацию о подписчике
+    const followerUser = await this.usersRepository.findOne({
+      where: { id: followerId },
+    });
+
     // Проверка существующей подписки
     const existingFollow = await this.followersRepository.findOne({
       where: { followerId, followingId },
@@ -56,7 +63,18 @@ export class FollowersService {
       followerId,
       followingId,
     });
-    return this.followersRepository.save(follower);
+    const savedFollower = await this.followersRepository.save(follower);
+
+    // Создаем уведомление о новом подписчике
+    if (followerUser) {
+      await this.notificationsService.createFollowNotification(
+        followingId,
+        followerUser.username,
+        followerId,
+      );
+    }
+
+    return savedFollower;
   }
 
   async unfollow(followerId: string, followingId: string): Promise<void> {

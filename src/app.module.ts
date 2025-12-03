@@ -9,6 +9,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { PostsModule } from './modules/posts/posts.module';
 import { StoriesModule } from './modules/stories/stories.module';
 import { FollowersModule } from './modules/followers/followers.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { FollowersModule } from './modules/followers/followers.module';
     PostsModule,
     StoriesModule,
     FollowersModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
