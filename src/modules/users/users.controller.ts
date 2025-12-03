@@ -1,16 +1,17 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Body, 
-  Param, 
-  Put, 
-  Delete, 
-  HttpException, 
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  Delete,
+  HttpException,
   HttpStatus,
   UseInterceptors,
   UploadedFile,
   Patch,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -26,6 +27,17 @@ export class UsersController {
   @Get()
   findAll(): Promise<User[]> {
     return this.usersService.findAll();
+  }
+
+  @Get('search')
+  search(@Query('q') query: string): Promise<User[]> {
+    if (!query) {
+      throw new HttpException(
+        'Search query is required',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    return this.usersService.searchByUsername(query);
   }
 
   @Get(':id')
@@ -44,10 +56,15 @@ export class UsersController {
   }
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto): Promise<User> {
+  async update(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<User> {
     // Проверка уникальности username, если он меняется
     if (updateUserDto.username) {
-      const existingUser = await this.usersService.findByUsername(updateUserDto.username);
+      const existingUser = await this.usersService.findByUsername(
+        updateUserDto.username,
+      );
       if (existingUser && existingUser.id !== id) {
         throw new HttpException('Username already taken', HttpStatus.CONFLICT);
       }
@@ -61,7 +78,8 @@ export class UsersController {
       storage: diskStorage({
         destination: './uploads/profile-pictures',
         filename: (req, file, callback) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
           const ext = extname(file.originalname);
           callback(null, `${req.params.id}-${uniqueSuffix}${ext}`);
         },
@@ -69,7 +87,10 @@ export class UsersController {
       fileFilter: (req, file, callback) => {
         if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
           return callback(
-            new HttpException('Only image files are allowed!', HttpStatus.BAD_REQUEST),
+            new HttpException(
+              'Only image files are allowed!',
+              HttpStatus.BAD_REQUEST,
+            ),
             false,
           );
         }

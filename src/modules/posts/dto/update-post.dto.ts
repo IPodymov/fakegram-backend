@@ -1,9 +1,21 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsBoolean } from 'class-validator';
 
 export class UpdatePostDto {
   @IsOptional()
   @IsString()
-  caption?: string;
+  title?: string;
+
+  @IsOptional()
+  @IsString()
+  content?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  published?: boolean;
+
+  @IsOptional()
+  @IsString()
+  mediaUrl?: string;
 
   @IsOptional()
   @IsString()

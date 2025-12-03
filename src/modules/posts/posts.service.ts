@@ -28,8 +28,11 @@ export class PostsService {
     });
   }
 
-  async create(postData: Partial<Post>): Promise<Post> {
-    const post = this.postsRepository.create(postData);
+  async create(postData: Partial<Post>, userId: string): Promise<Post> {
+    const post = this.postsRepository.create({
+      ...postData,
+      userId,
+    });
     return this.postsRepository.save(post);
   }
 

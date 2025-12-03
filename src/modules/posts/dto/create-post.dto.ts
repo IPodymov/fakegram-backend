@@ -1,13 +1,21 @@
-import { IsNotEmpty, IsString, IsOptional, IsBoolean, IsUrl } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional, IsBoolean } from 'class-validator';
 
 export class CreatePostDto {
   @IsNotEmpty()
   @IsString()
-  userId: string;
+  title: string;
 
   @IsNotEmpty()
-  @IsUrl()
-  mediaUrl: string;
+  @IsString()
+  content: string;
+
+  @IsOptional()
+  @IsBoolean()
+  published?: boolean;
+
+  @IsOptional()
+  @IsString()
+  mediaUrl?: string;
 
   @IsOptional()
   @IsString()

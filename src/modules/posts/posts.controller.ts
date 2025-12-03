@@ -1,8 +1,20 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  Delete,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { Post as PostEntity } from '../../entities/post.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @Controller('posts')
 export class PostsController {
@@ -22,12 +34,19 @@ export class PostsController {
   }
 
   @Post()
-  create(@Body() createPostDto: CreatePostDto): Promise<PostEntity> {
-    return this.postsService.create(createPostDto);
+  @UseGuards(JwtAuthGuard)
+  create(
+    @Body() createPostDto: CreatePostDto,
+    @CurrentUser() user: { id: string; username: string },
+  ): Promise<PostEntity> {
+    return this.postsService.create(createPostDto, user.id);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto): Promise<PostEntity> {
+  update(
+    @Param('id') id: string,
+    @Body() updatePostDto: UpdatePostDto,
+  ): Promise<PostEntity> {
     return this.postsService.update(id, updatePostDto);
   }
 

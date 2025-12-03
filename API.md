@@ -292,3 +292,315 @@ getProfile(@CurrentUser() user) {
 - `sub` - ID пользователя
 - `iat` - время создания токена (issued at)
 - `exp` - время истечения токена (expiration)
+
+---
+
+## Посты
+
+### Создание поста
+
+**Endpoint:** `POST /posts`
+
+**Headers:**
+```
+Authorization: Bearer {access_token}
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "title": "Мой первый пост",
+  "content": "Это содержимое моего поста",
+  "published": true,
+  "mediaUrl": "https://example.com/image.jpg"
+}
+```
+
+**Validation Rules:**
+- `title`: строка, обязательное поле
+- `content`: строка, обязательное поле
+- `published`: boolean, необязательное (по умолчанию `true`)
+- `mediaUrl`: строка (URL или base64), необязательное
+
+**Success Response (201):**
+```json
+{
+  "id": "uuid",
+  "title": "Мой первый пост",
+  "content": "Это содержимое моего поста",
+  "published": true,
+  "mediaUrl": "https://example.com/image.jpg",
+  "userId": "user-uuid",
+  "createdAt": "2025-12-03T10:00:00.000Z",
+  "updatedAt": "2025-12-03T10:00:00.000Z"
+}
+```
+
+---
+
+### Получение всех постов
+
+**Endpoint:** `GET /posts`
+
+**Query Parameters:**
+- `userId` (optional) - фильтр по ID пользователя
+
+**Success Response (200):**
+```json
+[
+  {
+    "id": "uuid",
+    "title": "Мой первый пост",
+    "content": "Это содержимое моего поста",
+    "published": true,
+    "mediaUrl": "https://example.com/image.jpg",
+    "userId": "user-uuid",
+    "createdAt": "2025-12-03T10:00:00.000Z",
+    "updatedAt": "2025-12-03T10:00:00.000Z",
+    "user": {
+      "id": "user-uuid",
+      "username": "john_doe",
+      "fullName": "John Doe",
+      "profilePictureUrl": "https://example.com/avatar.jpg"
+    },
+    "comments": [],
+    "likes": []
+  }
+]
+```
+
+---
+
+### Получение поста по ID
+
+**Endpoint:** `GET /posts/:id`
+
+**Success Response (200):**
+```json
+{
+  "id": "uuid",
+  "title": "Мой первый пост",
+  "content": "Это содержимое моего поста",
+  "published": true,
+  "mediaUrl": "https://example.com/image.jpg",
+  "userId": "user-uuid",
+  "createdAt": "2025-12-03T10:00:00.000Z",
+  "updatedAt": "2025-12-03T10:00:00.000Z",
+  "user": {
+    "id": "user-uuid",
+    "username": "john_doe",
+    "fullName": "John Doe"
+  },
+  "comments": [],
+  "likes": []
+}
+```
+
+---
+
+### Обновление поста
+
+**Endpoint:** `PUT /posts/:id`
+
+**Headers:**
+```
+Authorization: Bearer {access_token}
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "title": "Обновленный заголовок",
+  "content": "Обновленное содержимое",
+  "published": false,
+  "mediaUrl": "https://example.com/new-image.jpg"
+}
+```
+
+**Note:** Все поля необязательные
+
+---
+
+### Удаление поста
+
+**Endpoint:** `DELETE /posts/:id`
+
+**Headers:**
+```
+Authorization: Bearer {access_token}
+```
+
+**Success Response (200):**
+```
+(void)
+```
+
+---
+
+## Истории (Stories)
+
+### Создание истории
+
+**Endpoint:** `POST /stories`
+
+**Headers:**
+```
+Authorization: Bearer {access_token}
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "content": "Это моя история",
+  "mediaUrl": "https://example.com/story-image.jpg"
+}
+```
+
+**Validation Rules:**
+- `content`: строка, обязательное поле
+- `mediaUrl`: строка (URL или base64), необязательное
+
+**Success Response (201):**
+```json
+{
+  "id": "uuid",
+  "content": "Это моя история",
+  "mediaUrl": "https://example.com/story-image.jpg",
+  "userId": "user-uuid",
+  "createdAt": "2025-12-03T10:00:00.000Z",
+  "expiresAt": "2025-12-04T10:00:00.000Z"
+}
+```
+
+---
+
+### Получение всех историй
+
+**Endpoint:** `GET /stories`
+
+**Query Parameters:**
+- `userId` (optional) - фильтр по ID пользователя
+
+**Success Response (200):**
+```json
+[
+  {
+    "id": "uuid",
+    "content": "Это моя история",
+    "mediaUrl": "https://example.com/story-image.jpg",
+    "userId": "user-uuid",
+    "createdAt": "2025-12-03T10:00:00.000Z",
+    "expiresAt": "2025-12-04T10:00:00.000Z",
+    "user": {
+      "id": "user-uuid",
+      "username": "john_doe",
+      "fullName": "John Doe",
+      "profilePictureUrl": "https://example.com/avatar.jpg"
+    }
+  }
+]
+```
+
+---
+
+### Получение истории по ID
+
+**Endpoint:** `GET /stories/:id`
+
+**Success Response (200):**
+```json
+{
+  "id": "uuid",
+  "content": "Это моя история",
+  "mediaUrl": "https://example.com/story-image.jpg",
+  "userId": "user-uuid",
+  "createdAt": "2025-12-03T10:00:00.000Z",
+  "expiresAt": "2025-12-04T10:00:00.000Z",
+  "user": {
+    "id": "user-uuid",
+    "username": "john_doe",
+    "fullName": "John Doe"
+  }
+}
+```
+
+---
+
+### Удаление истории
+
+**Endpoint:** `DELETE /stories/:id`
+
+**Headers:**
+```
+Authorization: Bearer {access_token}
+```
+
+**Success Response (200):**
+```
+(void)
+```
+
+---
+
+## Примеры использования постов и историй
+
+### JavaScript (Fetch API)
+
+**Создание поста:**
+```javascript
+const createPost = async () => {
+  const token = localStorage.getItem('access_token');
+  
+  const response = await fetch('http://localhost:3000/posts', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      title: 'Мой пост',
+      content: 'Содержимое поста',
+      published: true,
+      mediaUrl: 'https://example.com/image.jpg'
+    })
+  });
+  
+  const data = await response.json();
+  console.log(data);
+};
+```
+
+**Создание истории:**
+```javascript
+const createStory = async () => {
+  const token = localStorage.getItem('access_token');
+  
+  const response = await fetch('http://localhost:3000/stories', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      content: 'Моя история',
+      mediaUrl: 'https://example.com/story.jpg'
+    })
+  });
+  
+  const data = await response.json();
+  console.log(data);
+};
+```
+
+**Получение постов пользователя:**
+```javascript
+const getUserPosts = async (userId) => {
+  const response = await fetch(`http://localhost:3000/posts?userId=${userId}`);
+  const data = await response.json();
+  console.log(data);
+};
+```
+

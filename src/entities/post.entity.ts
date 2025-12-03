@@ -19,7 +19,16 @@ export class Post {
   @Column({ name: 'user_id' })
   userId: string;
 
-  @Column({ name: 'media_url' })
+  @Column()
+  title: string;
+
+  @Column({ type: 'text' })
+  content: string;
+
+  @Column({ default: true })
+  published: boolean;
+
+  @Column({ name: 'media_url', nullable: true })
   mediaUrl: string;
 
   @Column({ type: 'text', nullable: true })
