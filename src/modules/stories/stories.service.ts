@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Story } from '../../entities/story.entity';
+import { FileUtils } from '../../common/utils/file.utils';
 
 @Injectable()
 export class StoriesService {
@@ -33,8 +34,20 @@ export class StoriesService {
   }
 
   async create(storyData: Partial<Story>, userId: string): Promise<Story> {
+    // Обрабатываем base64 изображение, если оно есть
+    let mediaUrl = storyData.mediaUrl;
+    if (mediaUrl && mediaUrl.startsWith('data:image')) {
+      try {
+        mediaUrl = FileUtils.saveBase64Image(mediaUrl, 'stories');
+      } catch (error) {
+        console.error('Error saving base64 image:', error);
+        mediaUrl = null;
+      }
+    }
+
     const story = this.storiesRepository.create({
       ...storyData,
+      mediaUrl,
       userId,
     });
     return this.storiesRepository.save(story);
