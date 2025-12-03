@@ -95,6 +95,14 @@ export class AuthService {
     return this.usersService.findByEmail(email);
   }
 
+  async findById(id: string): Promise<UserWithoutPassword | null> {
+    const user = await this.usersService.findOne(id);
+    if (!user) {
+      return null;
+    }
+    return this.excludePassword(user);
+  }
+
   private excludePassword(user: User): UserWithoutPassword {
     const {
       passwordHash,

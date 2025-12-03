@@ -63,7 +63,11 @@ export class FollowersService {
       relations: ['follower'],
     });
 
-    return followers.map((f) => f.follower);
+    return followers.map((f) => {
+      const { passwordHash, twoFactorCode, twoFactorCodeExpiresAt, ...user } =
+        f.follower;
+      return user as User;
+    });
   }
 
   async getFollowing(userId: string): Promise<User[]> {
@@ -72,7 +76,11 @@ export class FollowersService {
       relations: ['following'],
     });
 
-    return following.map((f) => f.following);
+    return following.map((f) => {
+      const { passwordHash, twoFactorCode, twoFactorCodeExpiresAt, ...user } =
+        f.following;
+      return user as User;
+    });
   }
 
   async isFollowing(

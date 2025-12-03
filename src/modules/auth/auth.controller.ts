@@ -11,7 +11,10 @@ import {
   UseGuards,
   Request,
   Patch,
+  Res,
+  Get,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import {
   AuthService,
   LoginResponse,
@@ -29,7 +32,10 @@ export class AuthController {
 
   @Post('login')
   @UsePipes(new ValidationPipe({ transform: true }))
-  async login(@Body() loginDto: LoginDto): Promise<LoginResponse> {
+  async login(
+    @Body() loginDto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<LoginResponse> {
     try {
       const user = await this.authService.validateUser(
         loginDto.username,
@@ -43,7 +49,17 @@ export class AuthController {
         );
       }
 
-      return this.authService.login(user);
+      const loginResponse = await this.authService.login(user);
+
+      // Устанавливаем cookie с токеном
+      res.cookie('access_token', loginResponse.access_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 дней
+      });
+
+      return loginResponse;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
@@ -83,8 +99,6 @@ export class AuthController {
         enable2FADto.enable,
       );
       /* eslint-enable @typescript-eslint/no-unsafe-member-access */
-      /* eslint-enable @typescript-eslint/no-unsafe-return */
-      /* eslint-enable @typescript-eslint/no-unsafe-call */
     } catch {
       throw new HttpException(
         'Failed to update 2FA settings',
@@ -97,6 +111,7 @@ export class AuthController {
   @UsePipes(new ValidationPipe({ transform: true }))
   async register(
     @Body() registerDto: RegisterDto,
+    @Res({ passthrough: true }) res: Response,
   ): Promise<{ message: string; user: UserWithoutPassword }> {
     try {
       // Проверка существующего username
@@ -121,6 +136,17 @@ export class AuthController {
         registerDto.password,
       );
 
+      // Автоматически логиним пользователя после регистрации
+      const loginResponse = await this.authService.login(result);
+
+      // Устанавливаем cookie с токеном
+      res.cookie('access_token', loginResponse.access_token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 дней
+      });
+
       return {
         message: 'User registered successfully',
         user: result,
@@ -134,5 +160,25 @@ export class AuthController {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+  }
+
+  @Post('logout')
+  logout(@Res({ passthrough: true }) res: Response): { message: string } {
+    res.clearCookie('access_token');
+    return { message: 'Logged out successfully' };
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  async getCurrentUser(@Request() req: any): Promise<UserWithoutPassword> {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    const userId: string = req.user.id;
+    const user = await this.authService.findById(userId);
+
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return user;
   }
 }

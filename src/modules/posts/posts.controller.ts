@@ -35,11 +35,16 @@ export class PostsController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  create(
+  async create(
     @Body() createPostDto: CreatePostDto,
     @CurrentUser() user: { id: string; username: string },
   ): Promise<PostEntity> {
-    return this.postsService.create(createPostDto, user.id);
+    try {
+      return await this.postsService.create(createPostDto, user.id);
+    } catch (error) {
+      console.error('Error creating post:', error);
+      throw error;
+    }
   }
 
   @Put(':id')

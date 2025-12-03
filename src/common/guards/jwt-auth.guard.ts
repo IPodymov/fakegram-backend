@@ -1,5 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 
@@ -17,28 +23,36 @@ export class JwtAuthGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<RequestWithUser>();
-    const token = this.extractTokenFromHeader(request);
+    const token =
+      this.extractTokenFromHeader(request) ||
+      this.extractTokenFromCookie(request);
 
     if (!token) {
-      return false;
+      throw new UnauthorizedException('No token provided');
     }
 
     try {
       const payload = this.jwtService.verify(token);
-      request.user = payload as {
-        id: string;
-        username: string;
-        sub: string;
+      // Маппим sub (стандартное поле JWT) на id для удобства использования
+      request.user = {
+        id: payload.sub || payload.id,
+        username: payload.username,
+        sub: payload.sub,
       };
-    } catch {
-      return false;
+    } catch (error) {
+      console.error('JWT verification error:', error);
+      throw new UnauthorizedException('Invalid or expired token');
     }
 
     return true;
   }
 
-  private extractTokenFromHeader(request: RequestWithUser): string | undefined {
+  private extractTokenFromHeader(request: RequestWithUser): string | null {
     const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
+    return type === 'Bearer' ? token : null;
+  }
+
+  private extractTokenFromCookie(request: RequestWithUser): string | null {
+    return (request.cookies?.access_token as string) || null;
   }
 }

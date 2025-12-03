@@ -1,5 +1,30 @@
 # Fakegram API Documentation
 
+## Cookie-based Authentication
+
+Все эндпоинты аутентификации (`/auth/login`, `/auth/register`) автоматически устанавливают JWT токен в httpOnly cookie с именем `access_token`. Cookie имеет следующие параметры:
+
+- **httpOnly**: true (защита от XSS атак)
+- **secure**: true в production (требует HTTPS)
+- **sameSite**: 'lax' (защита от CSRF)
+- **maxAge**: 7 дней
+
+Для работы с cookie на фронтенде необходимо включить отправку credentials:
+```javascript
+// Fetch API
+fetch('http://localhost:3000/auth/login', {
+  credentials: 'include',
+  // ... другие параметры
+});
+
+// Axios
+axios.post('http://localhost:3000/auth/login', data, {
+  withCredentials: true
+});
+```
+
+JWT guard автоматически читает токен из cookie, если отсутствует заголовок `Authorization: Bearer <token>`.
+
 ## Авторизация и регистрация
 
 ### Регистрация нового пользователя
@@ -37,6 +62,10 @@
   }
 }
 ```
+
+**Notes:**
+- После успешной регистрации пользователь автоматически авторизуется и получает JWT токен в cookie
+- Токен действителен 7 дней
 
 **Error Responses:**
 
@@ -101,6 +130,11 @@
 }
 ```
 
+**Notes:**
+- JWT токен автоматически сохраняется в httpOnly cookie `access_token`
+- Токен также возвращается в теле ответа для обратной совместимости
+- Токен действителен 7 дней
+
 **Error Responses:**
 
 - **401 Unauthorized** - Неверные учетные данные
@@ -125,6 +159,66 @@
 
 ---
 
+### Выход из системы
+
+**Endpoint:** `POST /auth/logout`
+
+**Authentication:** Не требуется
+
+**Success Response (200):**
+```json
+{
+  "message": "Logged out successfully"
+}
+```
+
+**Notes:**
+- Очищает httpOnly cookie `access_token`
+- После выхода из системы для доступа к защищенным эндпоинтам потребуется повторная авторизация
+
+---
+
+### Получить текущего пользователя
+
+**Endpoint:** `GET /auth/me`
+
+**Authentication:** Required (JWT)
+
+**Success Response (200):**
+```json
+{
+  "id": "uuid",
+  "username": "john_doe",
+  "email": "john@example.com",
+  "fullName": "John Doe",
+  "bio": "Software developer",
+  "profilePictureUrl": "/uploads/profile-pictures/filename.jpg",
+  "website": "https://johndoe.com",
+  "isPrivate": false,
+  "createdAt": "2025-12-01T10:00:00.000Z"
+}
+```
+
+**Error Responses:**
+
+- **401 Unauthorized** - Токен отсутствует или недействителен
+```json
+{
+  "statusCode": 401,
+  "message": "Token is missing"
+}
+```
+
+- **404 Not Found** - Пользователь не найден
+```json
+{
+  "statusCode": 404,
+  "message": "User not found"
+}
+```
+
+---
+
 ## Примеры использования
 
 ### cURL
@@ -133,6 +227,7 @@
 ```bash
 curl -X POST http://localhost:3000/auth/register \
   -H "Content-Type: application/json" \
+  -c cookies.txt \
   -d '{
     "username": "john_doe",
     "email": "john@example.com",
@@ -144,10 +239,24 @@ curl -X POST http://localhost:3000/auth/register \
 ```bash
 curl -X POST http://localhost:3000/auth/login \
   -H "Content-Type: application/json" \
+  -c cookies.txt \
   -d '{
     "username": "john_doe",
     "password": "securePassword123"
   }'
+```
+
+**Использование cookie для защищенных запросов:**
+```bash
+curl -X GET http://localhost:3000/auth/me \
+  -b cookies.txt
+```
+
+**Логаут:**
+```bash
+curl -X POST http://localhost:3000/auth/logout \
+  -b cookies.txt \
+  -c cookies.txt
 ```
 
 ### JavaScript (Fetch API)
@@ -157,6 +266,7 @@ curl -X POST http://localhost:3000/auth/login \
 const register = async () => {
   const response = await fetch('http://localhost:3000/auth/register', {
     method: 'POST',
+    credentials: 'include', // Важно для работы с cookies
     headers: {
       'Content-Type': 'application/json',
     },
@@ -177,6 +287,7 @@ const register = async () => {
 const login = async () => {
   const response = await fetch('http://localhost:3000/auth/login', {
     method: 'POST',
+    credentials: 'include', // Важно для работы с cookies
     headers: {
       'Content-Type': 'application/json',
     },
@@ -187,6 +298,34 @@ const login = async () => {
   });
   
   const data = await response.json();
+  console.log(data);
+};
+```
+
+**Получить текущего пользователя:**
+```javascript
+const getCurrentUser = async () => {
+  const response = await fetch('http://localhost:3000/auth/me', {
+    credentials: 'include' // Cookie автоматически отправится
+  });
+  
+  const user = await response.json();
+  console.log(user);
+};
+```
+
+**Логаут:**
+```javascript
+const logout = async () => {
+  const response = await fetch('http://localhost:3000/auth/logout', {
+    method: 'POST',
+    credentials: 'include'
+  });
+  
+  const data = await response.json();
+  console.log(data); // { message: "Logged out successfully" }
+};
+```
   
   // Сохраняем токен для последующих запросов
   localStorage.setItem('access_token', data.access_token);
