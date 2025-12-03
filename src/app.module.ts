@@ -8,6 +8,7 @@ import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { PostsModule } from './modules/posts/posts.module';
 import { StoriesModule } from './modules/stories/stories.module';
+import { FollowersModule } from './modules/followers/followers.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { StoriesModule } from './modules/stories/stories.module';
     AuthModule,
     PostsModule,
     StoriesModule,
+    FollowersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

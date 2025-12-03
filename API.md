@@ -604,3 +604,203 @@ const getUserPosts = async (userId) => {
 };
 ```
 
+---
+
+## Подписки (Followers/Following)
+
+### Подписаться на пользователя
+
+**Endpoint:** `POST /users/:userId/follow`
+
+**Headers:**
+```
+Authorization: Bearer {access_token}
+```
+
+**Success Response (200):**
+```json
+{
+  "message": "Successfully followed user",
+  "followerId": "current-user-uuid",
+  "followingId": "target-user-uuid",
+  "createdAt": "2025-12-03T10:00:00.000Z"
+}
+```
+
+**Error Responses:**
+
+- **400 Bad Request** - Попытка подписаться на самого себя
+```json
+{
+  "statusCode": 400,
+  "message": "Cannot follow yourself"
+}
+```
+
+- **404 Not Found** - Пользователь не найден
+```json
+{
+  "statusCode": 404,
+  "message": "User not found"
+}
+```
+
+- **409 Conflict** - Уже подписан
+```json
+{
+  "statusCode": 409,
+  "message": "Already following this user"
+}
+```
+
+---
+
+### Отписаться от пользователя
+
+**Endpoint:** `DELETE /users/:userId/follow`
+
+**Headers:**
+```
+Authorization: Bearer {access_token}
+```
+
+**Success Response (200):**
+```json
+{
+  "message": "Successfully unfollowed user"
+}
+```
+
+**Error Responses:**
+
+- **404 Not Found** - Подписка не найдена
+```json
+{
+  "statusCode": 404,
+  "message": "Not following this user"
+}
+```
+
+---
+
+### Получить список подписчиков
+
+**Endpoint:** `GET /users/:userId/followers`
+
+**Success Response (200):**
+```json
+[
+  {
+    "id": "user-uuid",
+    "username": "john_doe",
+    "fullName": "John Doe",
+    "profilePictureUrl": "https://example.com/avatar.jpg",
+    "bio": "Bio text",
+    "isPrivate": false
+  }
+]
+```
+
+---
+
+### Получить список подписок
+
+**Endpoint:** `GET /users/:userId/following`
+
+**Success Response (200):**
+```json
+[
+  {
+    "id": "user-uuid",
+    "username": "jane_smith",
+    "fullName": "Jane Smith",
+    "profilePictureUrl": "https://example.com/avatar2.jpg",
+    "bio": "Bio text",
+    "isPrivate": false
+  }
+]
+```
+
+---
+
+### Проверить подписку
+
+**Endpoint:** `GET /users/:userId/is-following`
+
+**Headers:**
+```
+Authorization: Bearer {access_token}
+```
+
+**Success Response (200):**
+```json
+{
+  "isFollowing": true
+}
+```
+
+---
+
+## Примеры использования подписок
+
+### JavaScript (Fetch API)
+
+**Подписаться:**
+```javascript
+const followUser = async (userId) => {
+  const token = localStorage.getItem('access_token');
+  
+  const response = await fetch(`http://localhost:3000/users/${userId}/follow`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    }
+  });
+  
+  const data = await response.json();
+  console.log(data);
+};
+```
+
+**Отписаться:**
+```javascript
+const unfollowUser = async (userId) => {
+  const token = localStorage.getItem('access_token');
+  
+  const response = await fetch(`http://localhost:3000/users/${userId}/follow`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    }
+  });
+  
+  const data = await response.json();
+  console.log(data);
+};
+```
+
+**Получить подписчиков:**
+```javascript
+const getFollowers = async (userId) => {
+  const response = await fetch(`http://localhost:3000/users/${userId}/followers`);
+  const data = await response.json();
+  console.log(data);
+};
+```
+
+**Проверить подписку:**
+```javascript
+const checkFollowing = async (userId) => {
+  const token = localStorage.getItem('access_token');
+  
+  const response = await fetch(`http://localhost:3000/users/${userId}/is-following`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    }
+  });
+  
+  const data = await response.json();
+  console.log(data); // { isFollowing: true/false }
+};
+```
+
