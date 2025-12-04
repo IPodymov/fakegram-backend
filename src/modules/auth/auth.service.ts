@@ -7,6 +7,7 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
+import { ShortLinksService } from '../short-links/short-links.service';
 import { User } from '../../entities/user.entity';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
@@ -22,6 +23,7 @@ export interface UserWithoutPassword {
   isPrivate: boolean;
   twoFactorEnabled: boolean;
   createdAt: Date;
+  shareUrl?: string;
 }
 
 export interface LoginResponse {
@@ -35,6 +37,7 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly shortLinksService: ShortLinksService,
   ) {}
 
   async validateUser(
@@ -63,6 +66,10 @@ export class AuthService {
       email: user.email,
     };
 
+    // Генерируем короткую ссылку для пользователя
+    const shortLink = await this.shortLinksService.getOrCreateShortLink(user.id);
+    user.shareUrl = this.shortLinksService.getFullUrl(shortLink.code);
+
     return {
       access_token: this.jwtService.sign(payload),
       user,
@@ -84,7 +91,12 @@ export class AuthService {
       isPrivate: false,
     });
 
-    return this.excludePassword(user);
+    // Генерируем короткую ссылку при регистрации
+    const shortLink = await this.shortLinksService.getOrCreateShortLink(user.id);
+    const userWithoutPassword = this.excludePassword(user);
+    userWithoutPassword.shareUrl = this.shortLinksService.getFullUrl(shortLink.code);
+
+    return userWithoutPassword;
   }
 
   async findByUsername(username: string): Promise<User | null> {
@@ -100,7 +112,13 @@ export class AuthService {
     if (!user) {
       return null;
     }
-    return this.excludePassword(user);
+
+    // Добавляем shareUrl
+    const shortLink = await this.shortLinksService.getOrCreateShortLink(user.id);
+    const userWithoutPassword = this.excludePassword(user);
+    userWithoutPassword.shareUrl = this.shortLinksService.getFullUrl(shortLink.code);
+
+    return userWithoutPassword;
   }
 
   private excludePassword(user: User): UserWithoutPassword {

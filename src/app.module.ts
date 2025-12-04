@@ -10,6 +10,7 @@ import { PostsModule } from './modules/posts/posts.module';
 import { StoriesModule } from './modules/stories/stories.module';
 import { FollowersModule } from './modules/followers/followers.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ShortLinksModule } from './modules/short-links/short-links.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     StoriesModule,
     FollowersModule,
     NotificationsModule,
+    ShortLinksModule,
   ],
   controllers: [AppController],
   providers: [AppService],

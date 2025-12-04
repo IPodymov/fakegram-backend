@@ -2,25 +2,23 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { UsersController } from './users.controller';
-import { UsersService } from './users.service';
+import { ShortLinksController } from './short-links.controller';
+import { ShortLinksService } from './short-links.service';
+import { ShortLink } from '../../entities/short-link.entity';
 import { User } from '../../entities/user.entity';
-import { Follower } from '../../entities/follower.entity';
 import { getJwtConfig } from '../../config/jwt.config';
-import { ShortLinksModule } from '../short-links/short-links.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Follower]),
+    TypeOrmModule.forFeature([ShortLink, User]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: getJwtConfig,
       inject: [ConfigService],
     }),
-    ShortLinksModule,
   ],
-  controllers: [UsersController],
-  providers: [UsersService],
-  exports: [UsersService],
+  controllers: [ShortLinksController],
+  providers: [ShortLinksService],
+  exports: [ShortLinksService],
 })
-export class UsersModule {}
+export class ShortLinksModule {}

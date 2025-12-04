@@ -12,6 +12,7 @@ import {
   UploadedFile,
   Patch,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -19,6 +20,8 @@ import { extname } from 'path';
 import { UsersService } from './users.service';
 import { User } from '../../entities/user.entity';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @Controller('users')
 export class UsersController {
@@ -38,6 +41,16 @@ export class UsersController {
       );
     }
     return this.usersService.searchByUsername(query);
+  }
+
+  @Get('suggestions')
+  @UseGuards(JwtAuthGuard)
+  getSuggestions(
+    @CurrentUser() user: { id: string; username: string },
+    @Query('limit') limit?: string,
+  ): Promise<User[]> {
+    const limitNum = limit ? parseInt(limit, 10) : 10;
+    return this.usersService.getSuggestedUsers(user.id, limitNum);
   }
 
   @Get(':id')
