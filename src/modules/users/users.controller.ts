@@ -22,17 +22,25 @@ import { User } from '../../entities/user.entity';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam, ApiConsumes, ApiBody } from '@nestjs/swagger';
 
+@ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
+  @ApiOperation({ summary: 'Получить всех пользователей', description: 'Возвращает список всех зарегистрированных пользователей' })
+  @ApiResponse({ status: 200, description: 'Список пользователей получен успешно' })
   findAll(): Promise<User[]> {
     return this.usersService.findAll();
   }
 
   @Get('search')
+  @ApiOperation({ summary: 'Поиск пользователей', description: 'Поиск пользователей по username (частичное совпадение)' })
+  @ApiQuery({ name: 'q', description: 'Поисковый запрос', required: true, example: 'john' })
+  @ApiResponse({ status: 200, description: 'Результаты поиска' })
+  @ApiResponse({ status: 400, description: 'Параметр поиска обязателен' })
   search(@Query('q') query: string): Promise<User[]> {
     if (!query) {
       throw new HttpException(
@@ -44,6 +52,11 @@ export class UsersController {
   }
 
   @Get('suggestions')
+  @ApiOperation({ summary: 'Рекомендации пользователей', description: 'Получить рекомендации пользователей для подписки (на основе популярности)' })
+  @ApiBearerAuth('JWT-auth')
+  @ApiQuery({ name: 'limit', description: 'Количество рекомендаций', required: false, example: 10 })
+  @ApiResponse({ status: 200, description: 'Список рекомендованных пользователей' })
+  @ApiResponse({ status: 401, description: 'Необходима авторизация' })
   @UseGuards(JwtAuthGuard)
   getSuggestions(
     @CurrentUser() user: { id: string; username: string },

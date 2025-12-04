@@ -26,8 +26,9 @@ export class FileUtils {
         mkdirSync(uploadDir, { recursive: true });
       }
 
-      // Генерируем уникальное имя файла с расширением .jpg
-      const filename = `${Date.now()}-${Math.round(Math.random() * 1e9)}.jpg`;
+      // Генерируем короткое уникальное имя файла (8 символов + расширение)
+      const shortId = Math.random().toString(36).substring(2, 10);
+      const filename = `${shortId}.jpg`;
       const filepath = join(uploadDir, filename);
 
       // Сохраняем файл

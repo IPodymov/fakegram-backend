@@ -25,12 +25,18 @@ import { RegisterDto } from './dto/register.dto';
 import { Verify2FADto } from './dto/verify-2fa.dto';
 import { Enable2FADto } from './dto/enable-2fa.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
+  @ApiOperation({ summary: 'Вход в систему', description: 'Аутентификация пользователя по username/email и паролю. Устанавливает httpOnly cookie с JWT токеном.' })
+  @ApiBody({ type: LoginDto })
+  @ApiResponse({ status: 200, description: 'Успешная аутентификация. Возвращает JWT токен и данные пользователя.' })
+  @ApiResponse({ status: 401, description: 'Неверные учетные данные' })
   @UsePipes(new ValidationPipe({ transform: true }))
   async login(
     @Body() loginDto: LoginDto,
@@ -69,6 +75,10 @@ export class AuthController {
   }
 
   @Post('verify-2fa')
+  @ApiOperation({ summary: 'Подтверждение 2FA кода', description: 'Верификация 6-значного кода двухфакторной аутентификации, отправленного на email' })
+  @ApiBody({ type: Verify2FADto })
+  @ApiResponse({ status: 200, description: 'Успешная верификация. Возвращает JWT токен.' })
+  @ApiResponse({ status: 401, description: 'Неверный код или код истек' })
   @UsePipes(new ValidationPipe({ transform: true }))
   async verify2FA(@Body() verify2FADto: Verify2FADto): Promise<LoginResponse> {
     try {
@@ -85,6 +95,11 @@ export class AuthController {
   }
 
   @Patch('toggle-2fa')
+  @ApiOperation({ summary: 'Включение/выключение 2FA', description: 'Управление двухфакторной аутентификацией для текущего пользователя' })
+  @ApiBearerAuth('JWT-auth')
+  @ApiBody({ type: Enable2FADto })
+  @ApiResponse({ status: 200, description: '2FA настройки успешно обновлены' })
+  @ApiResponse({ status: 401, description: 'Необходима авторизация' })
   @UseGuards(JwtAuthGuard)
   @UsePipes(new ValidationPipe({ transform: true }))
   async toggle2FA(
@@ -108,6 +123,10 @@ export class AuthController {
   }
 
   @Post('register')
+  @ApiOperation({ summary: 'Регистрация пользователя', description: 'Создание нового аккаунта. Автоматически выполняет вход и устанавливает httpOnly cookie.' })
+  @ApiBody({ type: RegisterDto })
+  @ApiResponse({ status: 201, description: 'Пользователь успешно зарегистрирован' })
+  @ApiResponse({ status: 409, description: 'Username или email уже существует' })
   @UsePipes(new ValidationPipe({ transform: true }))
   async register(
     @Body() registerDto: RegisterDto,
@@ -163,12 +182,19 @@ export class AuthController {
   }
 
   @Post('logout')
+  @ApiOperation({ summary: 'Выход из системы', description: 'Очищает httpOnly cookie с JWT токеном' })
+  @ApiResponse({ status: 200, description: 'Успешный выход из системы' })
   logout(@Res({ passthrough: true }) res: Response): { message: string } {
     res.clearCookie('access_token');
     return { message: 'Logged out successfully' };
   }
 
   @Get('me')
+  @ApiOperation({ summary: 'Текущий пользователь', description: 'Получение данных текущего авторизованного пользователя' })
+  @ApiBearerAuth('JWT-auth')
+  @ApiResponse({ status: 200, description: 'Данные пользователя' })
+  @ApiResponse({ status: 401, description: 'Необходима авторизация' })
+  @ApiResponse({ status: 404, description: 'Пользователь не найден' })
   @UseGuards(JwtAuthGuard)
   async getCurrentUser(@Request() req: any): Promise<UserWithoutPassword> {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access

@@ -6,6 +6,7 @@ import { join } from 'path';
 import * as express from 'express';
 import cookieParser from 'cookie-parser';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -36,6 +37,58 @@ async function bootstrap() {
   app.enableCors({
     origin: process.env.CORS_ORIGIN || '*',
     credentials: true,
+  });
+
+  // Swagger документация
+  const config = new DocumentBuilder()
+    .setTitle('Fakegram API')
+    .setDescription(
+      'Instagram Clone Backend API - полнофункциональный REST API для социальной сети с постами, stories, комментариями, лайками, подписками, уведомлениями и короткими ссылками',
+    )
+    .setVersion('1.0')
+    .addTag('auth', 'Аутентификация и авторизация')
+    .addTag('users', 'Управление пользователями')
+    .addTag('posts', 'Посты с фото/видео')
+    .addTag('stories', 'Истории (24 часа)')
+    .addTag('comments', 'Комментарии')
+    .addTag('likes', 'Лайки')
+    .addTag('followers', 'Подписки')
+    .addTag('notifications', 'Уведомления')
+    .addTag('short-links', 'Короткие ссылки для шаринга')
+    .addTag('messages', 'Личные сообщения')
+    .addTag('reels', 'Короткие видео')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Введите JWT токен',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
+    .addCookieAuth('access_token', {
+      type: 'apiKey',
+      in: 'cookie',
+      name: 'access_token',
+      description: 'HTTP-only cookie с JWT токеном',
+    })
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document, {
+    customSiteTitle: 'Fakegram API Documentation',
+    customfavIcon: 'https://nestjs.com/img/logo_text.svg',
+    customJs: [
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-bundle.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-standalone-preset.min.js',
+    ],
+    customCssUrl: [
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui.min.css',
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-standalone-preset.min.css',
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui.css',
+    ],
   });
 
   await app.listen(process.env.PORT ?? 3000);
