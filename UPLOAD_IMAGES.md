@@ -1,6 +1,73 @@
-# Загрузка фотографий профиля
+# Загрузка изображений
 
-## API для обновления фотографии профиля
+## Два способа загрузки изображений
+
+### 1. Base64 загрузка (Текущий метод)
+
+Изображения передаются в формате base64 строки непосредственно в JSON теле запроса.
+
+**Преимущества:**
+- Простота реализации
+- Не требуется дополнительное хранилище
+- Изображения хранятся в базе данных
+
+**Недостатки:**
+- Большой размер данных (на ~33% больше бинарного)
+- Нагрузка на базу данных
+
+**Пример создания поста с изображением:**
+
+```javascript
+const imageBase64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRg...';
+
+fetch('http://localhost:3000/posts', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer YOUR_JWT_TOKEN'
+  },
+  body: JSON.stringify({
+    caption: 'My new post',
+    mediaUrl: imageBase64, // Base64 строка
+    mediaType: 'image'
+  })
+})
+  .then(response => response.json())
+  .then(data => console.log(data));
+```
+
+**Пример обновления аватара пользователя:**
+
+```javascript
+const avatarBase64 = 'data:image/png;base64,iVBORw0KGgo...';
+
+fetch('http://localhost:3000/users/USER_ID', {
+  method: 'PUT',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer YOUR_JWT_TOKEN'
+  },
+  body: JSON.stringify({
+    profilePictureUrl: avatarBase64
+  })
+})
+  .then(response => response.json())
+  .then(data => console.log(data));
+```
+
+**Формат base64 строки:**
+```
+data:[MIME_TYPE];base64,[BASE64_DATA]
+```
+
+Примеры:
+- `data:image/jpeg;base64,/9j/4AAQSkZJRg...`
+- `data:image/png;base64,iVBORw0KGgo...`
+- `data:image/webp;base64,UklGRiQA...`
+
+### 2. Multipart/form-data загрузка (Альтернативный метод)
+
+## API для обновления фотографии профиля (multipart/form-data)
 
 ### Загрузка фотографии профиля
 

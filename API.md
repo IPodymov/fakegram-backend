@@ -943,3 +943,197 @@ const checkFollowing = async (userId) => {
 };
 ```
 
+---
+
+## Notifications (Уведомления)
+
+### Получить все уведомления
+
+**Endpoint:** `GET /notifications`
+
+**Authentication:** Required (JWT)
+
+**Success Response (200):**
+```json
+[
+  {
+    "id": "uuid",
+    "type": "like",
+    "message": "john_doe liked your post",
+    "referenceId": "post-uuid",
+    "isRead": false,
+    "createdAt": "2025-12-03T...",
+    "user": {
+      "id": "uuid",
+      "username": "john_doe",
+      "profilePictureUrl": "https://..."
+    }
+  }
+]
+```
+
+### Получить непрочитанные уведомления
+
+**Endpoint:** `GET /notifications/unread`
+
+**Authentication:** Required (JWT)
+
+### Получить количество непрочитанных
+
+**Endpoint:** `GET /notifications/unread-count`
+
+**Authentication:** Required (JWT)
+
+**Success Response (200):**
+```json
+{
+  "count": 5
+}
+```
+
+### Пометить как прочитанное
+
+**Endpoint:** `PATCH /notifications/:id/read`
+
+**Authentication:** Required (JWT)
+
+### Пометить все как прочитанные
+
+**Endpoint:** `PATCH /notifications/read-all`
+
+**Authentication:** Required (JWT)
+
+### Удалить уведомление
+
+**Endpoint:** `DELETE /notifications/:id`
+
+**Authentication:** Required (JWT)
+
+### Удалить все уведомления
+
+**Endpoint:** `DELETE /notifications`
+
+**Authentication:** Required (JWT)
+
+---
+
+## Short Links (Короткие ссылки)
+
+### Создать короткую ссылку
+
+**Endpoint:** `POST /short-links`
+
+**Authentication:** Required (JWT)
+
+**Success Response (200):**
+```json
+{
+  "code": "aB3dEf9H",
+  "shortUrl": "https://fakegram-backend-production.up.railway.app/s/aB3dEf9H",
+  "createdAt": "2025-12-03T..."
+}
+```
+
+**Notes:**
+- Один пользователь = одна короткая ссылка
+- Если ссылка уже существует, возвращается существующая
+
+### Получить свою короткую ссылку
+
+**Endpoint:** `GET /short-links/me`
+
+**Authentication:** Required (JWT)
+
+**Success Response (200):**
+```json
+{
+  "code": "aB3dEf9H",
+  "shortUrl": "https://fakegram-backend-production.up.railway.app/s/aB3dEf9H",
+  "clickCount": 42,
+  "createdAt": "2025-12-03T..."
+}
+```
+
+### Перейти по короткой ссылке
+
+**Endpoint:** `GET /s/:code`
+
+**Authentication:** Not required
+
+**Behavior:** Редиректит на профиль пользователя на фронтенде
+
+**Notes:**
+- Автоматически увеличивает счетчик кликов
+- Редиректит на `{FRONTEND_URL}/@{username}`
+
+### Удалить короткую ссылку
+
+**Endpoint:** `DELETE /short-links`
+
+**Authentication:** Required (JWT)
+
+---
+
+## User Suggestions (Рекомендации)
+
+### Получить рекомендации пользователей
+
+**Endpoint:** `GET /users/suggestions`
+
+**Authentication:** Required (JWT)
+
+**Query Parameters:**
+- `limit` (optional): Количество рекомендаций (по умолчанию 10)
+
+**Success Response (200):**
+```json
+[
+  {
+    "id": "uuid",
+    "username": "popular_user",
+    "fullName": "Popular User",
+    "profilePictureUrl": "https://...",
+    "bio": "Content creator",
+    "isPrivate": false,
+    "shareUrl": "https://fakegram-backend-production.up.railway.app/s/xyz123"
+  }
+]
+```
+
+**Algorithm:**
+- Исключает текущего пользователя
+- Исключает пользователей, на которых уже подписан
+- Сортирует по популярности (количество подписчиков)
+- Дополнительно сортирует по дате создания
+
+---
+
+## Share URL (Автоматическая генерация)
+
+Все эндпоинты, возвращающие информацию о пользователе, автоматически включают поле `shareUrl`:
+
+```json
+{
+  "id": "uuid",
+  "username": "john_doe",
+  "email": "john@example.com",
+  "profilePictureUrl": "https://...",
+  "shareUrl": "https://fakegram-backend-production.up.railway.app/s/aB3dEf9H"
+}
+```
+
+**Endpoints с shareUrl:**
+- `POST /auth/login`
+- `POST /auth/register`
+- `GET /auth/me`
+- `GET /users/:id`
+- `GET /users/username/:username`
+- `GET /users/search`
+- `GET /users/suggestions`
+
+**Notes:**
+- Короткая ссылка генерируется автоматически при первом запросе
+- Каждый пользователь имеет уникальный 8-символьный код
+- Ссылка сохраняется в базе данных и переиспользуется
+
+
