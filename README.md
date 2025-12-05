@@ -11,7 +11,7 @@ Instagram Clone REST API построенный на NestJS, TypeORM и PostgreS
 - Комментариев и лайков
 - Системы подписок (followers/following)
 - Уведомлений (лайки, подписки, новые посты)
-- Личных сообщений
+- Чатов и групповых переписок с поддержкой приглашений по ссылке
 - Reels (короткие видео)
 - Двухфакторной аутентификации через email (опционально)
 - Загрузки фотографий профиля
@@ -118,7 +118,9 @@ Swagger UI позволяет:
 - **comments** - Комментарии к постам
 - **likes** - Лайки постов
 - **followers** - Подписки между пользователями
-- **direct_messages** - Личные сообщения
+- **chats** - Чаты (личные и групповые)
+- **chat_members** - Участники чатов
+- **messages** - Сообщения в чатах
 - **notifications** - Уведомления (лайки, подписки, комментарии, новые посты)
 - **reels** - Короткие видео
 - **short_links** - Короткие ссылки для профилей (автоматическая генерация)
@@ -133,8 +135,8 @@ users ──┬─< posts
         ├─< likes
         ├─< followers (follower_id)
         ├─< followers (following_id)
-        ├─< direct_messages (sender_id)
-        ├─< direct_messages (receiver_id)
+        ├─< chat_members
+        ├─< messages (sender_id)
         ├─< notifications
         ├─< reels
         ├─< short_links
@@ -142,6 +144,9 @@ users ──┬─< posts
 
 posts ──┬─< comments
         └─< likes
+
+chats ──┬─< chat_members
+        └─< messages
 
 reels ──< user_reel_history
 
@@ -510,7 +515,9 @@ fakegram-backend/
 │   │   ├── comment.entity.ts
 │   │   ├── like.entity.ts
 │   │   ├── follower.entity.ts
-│   │   ├── direct-message.entity.ts
+│   │   ├── chat.entity.ts
+│   │   ├── chat-member.entity.ts
+│   │   ├── message.entity.ts
 │   │   ├── notification.entity.ts
 │   │   ├── reel.entity.ts
 │   │   └── user-reel-history.entity.ts
@@ -537,6 +544,14 @@ fakegram-backend/
 │   │       ├── posts.controller.ts
 │   │       ├── posts.service.ts
 │   │       └── posts.module.ts
+│   │   ├── chats/            # Чаты
+│   │   │   ├── dto/
+│   │   │   │   ├── create-chat.dto.ts
+│   │   │   │   ├── send-message.dto.ts
+│   │   │   │   └── join-chat.dto.ts
+│   │   │   ├── chats.controller.ts
+│   │   │   ├── chats.service.ts
+│   │   │   └── chats.module.ts
 │   ├── app.module.ts         # Корневой модуль
 │   └── main.ts               # Entry point
 ├── uploads/                   # Загруженные файлы (gitignored)
