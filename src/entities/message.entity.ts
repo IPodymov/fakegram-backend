@@ -7,17 +7,18 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { User } from './user.entity';
+import { Chat } from './chat.entity';
 
-@Entity('direct_messages')
-export class DirectMessage {
+@Entity('messages')
+export class Message {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ name: 'chat_id' })
+  chatId: string;
+
   @Column({ name: 'sender_id' })
   senderId: string;
-
-  @Column({ name: 'receiver_id' })
-  receiverId: string;
 
   @Column({ type: 'text', nullable: true })
   content: string;
@@ -31,11 +32,11 @@ export class DirectMessage {
   @Column({ name: 'is_read', default: false })
   isRead: boolean;
 
-  @ManyToOne(() => User, (user) => user.sentMessages)
+  @ManyToOne(() => Chat, (chat) => chat.messages, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'chat_id' })
+  chat: Chat;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'sender_id' })
   sender: User;
-
-  @ManyToOne(() => User, (user) => user.receivedMessages)
-  @JoinColumn({ name: 'receiver_id' })
-  receiver: User;
 }

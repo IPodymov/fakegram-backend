@@ -11,7 +11,7 @@ import { Story } from './story.entity';
 import { Comment } from './comment.entity';
 import { Like } from './like.entity';
 import { Follower } from './follower.entity';
-import { DirectMessage } from './direct-message.entity';
+import { ChatMember } from './chat-member.entity';
 import { Notification } from './notification.entity';
 import { Reel } from './reel.entity';
 import { UserReelHistory } from './user-reel-history.entity';
@@ -78,11 +78,8 @@ export class User {
   @OneToMany(() => Follower, (follower) => follower.following)
   followers: Follower[];
 
-  @OneToMany(() => DirectMessage, (message) => message.sender)
-  sentMessages: DirectMessage[];
-
-  @OneToMany(() => DirectMessage, (message) => message.receiver)
-  receivedMessages: DirectMessage[];
+  @OneToMany(() => ChatMember, (member) => member.user)
+  chatMemberships: ChatMember[];
 
   @OneToMany(() => Notification, (notification) => notification.user)
   notifications: Notification[];

@@ -11,6 +11,7 @@ import { StoriesModule } from './modules/stories/stories.module';
 import { FollowersModule } from './modules/followers/followers.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ShortLinksModule } from './modules/short-links/short-links.module';
+import { ChatsModule } from './modules/chats/chats.module';
 import { CommonModule } from './common/common.module';
 
 @Module({
@@ -32,6 +33,7 @@ import { CommonModule } from './common/common.module';
     FollowersModule,
     NotificationsModule,
     ShortLinksModule,
+    ChatsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
