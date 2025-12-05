@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Post } from '../../entities/post.entity';
@@ -38,7 +38,15 @@ export class PostsService {
 
   async create(postData: Partial<Post>, userId: string): Promise<Post> {
     // Обрабатываем base64 изображение, если оно есть
-    const mediaUrl = FileUtils.saveBase64ImageSafe(postData.mediaUrl, 'posts');
+    let mediaUrl = postData.mediaUrl;
+    if (mediaUrl && mediaUrl.startsWith('data:image')) {
+      const savedUrl = FileUtils.saveBase64ImageSafe(mediaUrl, 'posts');
+      if (savedUrl) {
+        mediaUrl = savedUrl;
+      } else {
+        throw new BadRequestException('Failed to save post image');
+      }
+    }
 
     const post = this.postsRepository.create({
       ...postData,
@@ -60,7 +68,7 @@ export class PostsService {
       if (savedUrl) {
         updateData.mediaUrl = savedUrl;
       } else {
-        delete updateData.mediaUrl;
+        throw new BadRequestException('Failed to save post image');
       }
     }
 

@@ -5,6 +5,8 @@ import { User } from '../../entities/user.entity';
 import { Follower } from '../../entities/follower.entity';
 import { ShortLinksService } from '../short-links/short-links.service';
 import { UrlService } from '../../common/services/url.service';
+import { FileUtils } from '../../common/utils/file.utils';
+import { BadRequestException } from '@nestjs/common';
 
 @Injectable()
 export class UsersService {
@@ -67,12 +69,40 @@ export class UsersService {
   }
 
   async create(userData: Partial<User>): Promise<User> {
+    if (
+      userData.profilePictureUrl &&
+      userData.profilePictureUrl.startsWith('data:image')
+    ) {
+      const savedUrl = FileUtils.saveBase64ImageSafe(
+        userData.profilePictureUrl,
+        'avatars',
+      );
+      if (savedUrl) {
+        userData.profilePictureUrl = savedUrl;
+      } else {
+        throw new BadRequestException('Failed to save profile picture');
+      }
+    }
     const user = this.usersRepository.create(userData);
     const savedUser = await this.usersRepository.save(user);
     return this.formatUserUrls(savedUser);
   }
 
   async update(id: string, userData: Partial<User>): Promise<User> {
+    if (
+      userData.profilePictureUrl &&
+      userData.profilePictureUrl.startsWith('data:image')
+    ) {
+      const savedUrl = FileUtils.saveBase64ImageSafe(
+        userData.profilePictureUrl,
+        'avatars',
+      );
+      if (savedUrl) {
+        userData.profilePictureUrl = savedUrl;
+      } else {
+        throw new BadRequestException('Failed to save profile picture');
+      }
+    }
     await this.usersRepository.update(id, userData);
     return this.findOne(id);
   }

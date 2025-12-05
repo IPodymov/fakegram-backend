@@ -11,14 +11,23 @@ export class FileUtils {
 
       // Извлекаем mime type и данные
       const matches = base64String.match(
-        /^data:image\/([a-zA-Z]+);base64,(.+)$/,
+        /^data:image\/([a-zA-Z0-9+.-]+);base64,(.+)$/,
       );
       if (!matches || matches.length !== 3) {
         throw new Error('Invalid base64 image format');
       }
 
+      const mimeType = matches[1];
       const data = matches[2];
       const buffer = Buffer.from(data, 'base64');
+
+      // Определяем расширение файла
+      let extension = 'jpg';
+      if (mimeType === 'png') extension = 'png';
+      else if (mimeType === 'gif') extension = 'gif';
+      else if (mimeType === 'webp') extension = 'webp';
+      else if (mimeType === 'svg+xml') extension = 'svg';
+      else if (mimeType === 'jpeg') extension = 'jpg';
 
       // Создаем директорию, если не существует
       const uploadDir = join(process.cwd(), 'uploads', directory);
@@ -28,7 +37,7 @@ export class FileUtils {
 
       // Генерируем короткое уникальное имя файла (8 символов + расширение)
       const shortId = Math.random().toString(36).substring(2, 10);
-      const filename = `${shortId}.jpg`;
+      const filename = `${shortId}.${extension}`;
       const filepath = join(uploadDir, filename);
 
       // Сохраняем файл

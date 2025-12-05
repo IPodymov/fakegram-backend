@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Story } from '../../entities/story.entity';
@@ -40,10 +40,15 @@ export class StoriesService {
 
   async create(storyData: Partial<Story>, userId: string): Promise<Story> {
     // Обрабатываем base64 изображение, если оно есть
-    const mediaUrl = FileUtils.saveBase64ImageSafe(
-      storyData.mediaUrl,
-      'stories',
-    );
+    let mediaUrl = storyData.mediaUrl;
+    if (mediaUrl && mediaUrl.startsWith('data:image')) {
+      const savedUrl = FileUtils.saveBase64ImageSafe(mediaUrl, 'stories');
+      if (savedUrl) {
+        mediaUrl = savedUrl;
+      } else {
+        throw new BadRequestException('Failed to save story image');
+      }
+    }
 
     const story = this.storiesRepository.create({
       ...storyData,
