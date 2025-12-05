@@ -41,4 +41,19 @@ export class FileUtils {
       throw error;
     }
   }
+
+  static saveBase64ImageSafe(
+    base64String: string | undefined,
+    directory: string,
+  ): string | null {
+    if (!base64String || !base64String.startsWith('data:image')) {
+      return base64String || null;
+    }
+    try {
+      return this.saveBase64Image(base64String, directory);
+    } catch (error) {
+      console.error('Error saving base64 image:', error);
+      return null;
+    }
+  }
 }

@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   OneToMany,
 } from 'typeorm';
+import { Exclude } from 'class-transformer';
 import { Post } from './post.entity';
 import { Story } from './story.entity';
 import { Comment } from './comment.entity';
@@ -27,6 +28,7 @@ export class User {
   email: string;
 
   @Column({ name: 'password_hash' })
+  @Exclude()
   passwordHash: string;
 
   @Column({ name: 'full_name', nullable: true })
@@ -48,9 +50,11 @@ export class User {
   twoFactorEnabled: boolean;
 
   @Column({ name: 'two_factor_code', nullable: true })
+  @Exclude()
   twoFactorCode: string;
 
   @Column({ name: 'two_factor_code_expires_at', nullable: true })
+  @Exclude()
   twoFactorCodeExpiresAt: Date;
 
   @CreateDateColumn({ name: 'created_at' })

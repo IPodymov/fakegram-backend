@@ -11,6 +11,7 @@ import { StoriesModule } from './modules/stories/stories.module';
 import { FollowersModule } from './modules/followers/followers.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ShortLinksModule } from './modules/short-links/short-links.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ShortLinksModule } from './modules/short-links/short-links.module';
       useFactory: getDatabaseConfig,
       inject: [ConfigService],
     }),
+    CommonModule,
     UsersModule,
     AuthModule,
     PostsModule,

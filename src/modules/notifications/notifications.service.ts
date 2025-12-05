@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
 import { Notification } from '../../entities/notification.entity';
+import { UrlService } from '../../common/services/url.service';
 
 export enum NotificationType {
   LIKE = 'like',
@@ -14,32 +14,11 @@ export enum NotificationType {
 
 @Injectable()
 export class NotificationsService {
-  private readonly baseUrl: string;
-
   constructor(
     @InjectRepository(Notification)
     private notificationsRepository: Repository<Notification>,
-    private configService: ConfigService,
-  ) {
-    this.baseUrl =
-      this.configService.get<string>('BASE_URL') || 'http://localhost:3000';
-  }
-
-  private formatNotificationUrls(notification: Notification): Notification {
-    const formatted = { ...notification };
-
-    if (formatted.user) {
-      formatted.user = { ...formatted.user };
-      if (
-        formatted.user.profilePictureUrl &&
-        !formatted.user.profilePictureUrl.startsWith('http')
-      ) {
-        formatted.user.profilePictureUrl = `${this.baseUrl}${formatted.user.profilePictureUrl}`;
-      }
-    }
-
-    return formatted;
-  }
+    private urlService: UrlService,
+  ) {}
 
   async create(
     userId: string,
@@ -62,7 +41,7 @@ export class NotificationsService {
       relations: ['user'],
       order: { createdAt: 'DESC' },
     });
-    return notifications.map((n) => this.formatNotificationUrls(n));
+    return notifications.map((n) => this.urlService.formatNotificationUrls(n));
   }
 
   async findUnreadByUserId(userId: string): Promise<Notification[]> {
@@ -71,7 +50,7 @@ export class NotificationsService {
       relations: ['user'],
       order: { createdAt: 'DESC' },
     });
-    return notifications.map((n) => this.formatNotificationUrls(n));
+    return notifications.map((n) => this.urlService.formatNotificationUrls(n));
   }
 
   async markAsRead(id: string): Promise<Notification> {
@@ -80,7 +59,9 @@ export class NotificationsService {
       where: { id },
       relations: ['user'],
     });
-    return notification ? this.formatNotificationUrls(notification) : null;
+    return notification
+      ? this.urlService.formatNotificationUrls(notification)
+      : null;
   }
 
   async markAllAsRead(userId: string): Promise<void> {

@@ -1,38 +1,33 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, Not, In } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
 import { User } from '../../entities/user.entity';
 import { Follower } from '../../entities/follower.entity';
 import { ShortLinksService } from '../short-links/short-links.service';
+import { UrlService } from '../../common/services/url.service';
 
 @Injectable()
 export class UsersService {
-  private readonly baseUrl: string;
-
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
     @InjectRepository(Follower)
     private followersRepository: Repository<Follower>,
-    private configService: ConfigService,
     private shortLinksService: ShortLinksService,
-  ) {
-    this.baseUrl =
-      this.configService.get<string>('BASE_URL') || 'http://localhost:3000';
-  }
+    private urlService: UrlService,
+  ) {}
 
   private async formatUserUrls(user: User): Promise<User> {
-    const formattedUser = { ...user };
-    
-    if (formattedUser.profilePictureUrl && !formattedUser.profilePictureUrl.startsWith('http')) {
-      formattedUser.profilePictureUrl = `${this.baseUrl}${formattedUser.profilePictureUrl}`;
-    }
-    
+    const formattedUser = this.urlService.formatUserUrls(user);
+
     // Автоматически создаем/получаем короткую ссылку
-    const shortLink = await this.shortLinksService.getOrCreateShortLink(user.id);
-    (formattedUser as any).shareUrl = this.shortLinksService.getFullUrl(shortLink.code);
-    
+    const shortLink = await this.shortLinksService.getOrCreateShortLink(
+      user.id,
+    );
+    (formattedUser as any).shareUrl = this.shortLinksService.getFullUrl(
+      shortLink.code,
+    );
+
     return formattedUser;
   }
 

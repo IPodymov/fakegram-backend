@@ -1,28 +1,23 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
 import { Post } from '../../entities/post.entity';
 import { FileUtils } from '../../common/utils/file.utils';
+import { UrlService } from '../../common/services/url.service';
 
 @Injectable()
 export class PostsService {
-  private readonly baseUrl: string;
-
   constructor(
     @InjectRepository(Post)
     private postsRepository: Repository<Post>,
-    private configService: ConfigService,
-  ) {
-    this.baseUrl =
-      this.configService.get<string>('BASE_URL') || 'http://localhost:3000';
-  }
+    private urlService: UrlService,
+  ) {}
 
   async findAll(): Promise<Post[]> {
     const posts = await this.postsRepository.find({
       relations: ['user', 'comments', 'likes'],
     });
-    return posts.map((post) => this.formatPostUrls(post));
+    return posts.map((post) => this.urlService.formatPostUrls(post));
   }
 
   async findOne(id: string): Promise<Post | null> {
@@ -30,7 +25,7 @@ export class PostsService {
       where: { id },
       relations: ['user', 'comments', 'likes'],
     });
-    return post ? this.formatPostUrls(post) : null;
+    return post ? this.urlService.formatPostUrls(post) : null;
   }
 
   async findByUserId(userId: string): Promise<Post[]> {
@@ -38,41 +33,12 @@ export class PostsService {
       where: { userId },
       relations: ['user', 'comments', 'likes'],
     });
-    return posts.map((post) => this.formatPostUrls(post));
-  }
-
-  private formatPostUrls(post: Post): Post {
-    const formattedPost = { ...post };
-
-    if (formattedPost.mediaUrl && !formattedPost.mediaUrl.startsWith('http')) {
-      formattedPost.mediaUrl = `${this.baseUrl}${formattedPost.mediaUrl}`;
-    }
-
-    if (formattedPost.user) {
-      formattedPost.user = { ...formattedPost.user };
-      if (
-        formattedPost.user.profilePictureUrl &&
-        !formattedPost.user.profilePictureUrl.startsWith('http')
-      ) {
-        formattedPost.user.profilePictureUrl = `${this.baseUrl}${formattedPost.user.profilePictureUrl}`;
-      }
-    }
-
-    return formattedPost;
+    return posts.map((post) => this.urlService.formatPostUrls(post));
   }
 
   async create(postData: Partial<Post>, userId: string): Promise<Post> {
     // Обрабатываем base64 изображение, если оно есть
-    let mediaUrl = postData.mediaUrl;
-    if (mediaUrl && mediaUrl.startsWith('data:image')) {
-      try {
-        mediaUrl = FileUtils.saveBase64Image(mediaUrl, 'posts');
-      } catch (error) {
-        console.error('Error saving base64 image:', error);
-        // Продолжаем без изображения в случае ошибки
-        mediaUrl = null;
-      }
-    }
+    const mediaUrl = FileUtils.saveBase64ImageSafe(postData.mediaUrl, 'posts');
 
     const post = this.postsRepository.create({
       ...postData,
@@ -87,13 +53,13 @@ export class PostsService {
     // Обрабатываем base64 изображение при обновлении
     const updateData = { ...postData };
     if (updateData.mediaUrl && updateData.mediaUrl.startsWith('data:image')) {
-      try {
-        updateData.mediaUrl = FileUtils.saveBase64Image(
-          updateData.mediaUrl,
-          'posts',
-        );
-      } catch (error) {
-        console.error('Error saving base64 image:', error);
+      const savedUrl = FileUtils.saveBase64ImageSafe(
+        updateData.mediaUrl,
+        'posts',
+      );
+      if (savedUrl) {
+        updateData.mediaUrl = savedUrl;
+      } else {
         delete updateData.mediaUrl;
       }
     }
