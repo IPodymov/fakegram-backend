@@ -7,9 +7,11 @@
 ## API Endpoints
 
 ### 1. Вход в систему (Login)
+
 **POST** `/auth/login`
 
 **Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -18,6 +20,7 @@
 ```
 
 **Ответ (если 2FA выключена):**
+
 ```json
 {
   "access_token": "jwt-token",
@@ -34,6 +37,7 @@
 **Примечание:** При успешном входе JWT также устанавливается в httpOnly cookie с именем `access_token`, который автоматически отправляется браузером при последующих запросах.
 
 **Ответ (если 2FA включена):**
+
 ```json
 {
   "message": "Verification code sent to your email",
@@ -42,9 +46,11 @@
 ```
 
 ### 2. Подтверждение 2FA кода
+
 **POST** `/auth/verify-2fa`
 
 **Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -53,6 +59,7 @@
 ```
 
 **Ответ:**
+
 ```json
 {
   "access_token": "jwt-token",
@@ -65,14 +72,17 @@
 **Примечание:** При успешной верификации JWT также устанавливается в httpOnly cookie.
 
 ### 3. Включение/выключение 2FA
+
 **PATCH** `/auth/toggle-2fa`
 
 **Headers:**
+
 ```
 Authorization: Bearer <jwt-token>
 ```
 
 **Body:**
+
 ```json
 {
   "enable": true
@@ -80,6 +90,7 @@ Authorization: Bearer <jwt-token>
 ```
 
 **Ответ:**
+
 ```json
 {
   "message": "2FA enabled successfully"
@@ -92,8 +103,8 @@ Authorization: Bearer <jwt-token>
 
 ```typescript
 {
-  twoFactorEnabled: boolean;        // Включена ли 2FA
-  twoFactorCode: string | null;     // Временный код (6 цифр)
+  twoFactorEnabled: boolean; // Включена ли 2FA
+  twoFactorCode: string | null; // Временный код (6 цифр)
   twoFactorCodeExpiresAt: Date | null; // Время истечения кода
 }
 ```
@@ -131,6 +142,7 @@ Authorization: Bearer <jwt-token>
 ### Рекомендуемые сервисы:
 
 #### 1. Nodemailer (с Gmail/SMTP)
+
 ```bash
 npm install nodemailer
 ```
@@ -161,12 +173,14 @@ async sendVerificationCode(email: string, code: string): Promise<void> {
 ```
 
 **.env:**
+
 ```
 EMAIL_USER=your-email@gmail.com
 EMAIL_PASSWORD=your-app-password
 ```
 
 #### 2. SendGrid
+
 ```bash
 npm install @sendgrid/mail
 ```
@@ -191,12 +205,14 @@ async sendVerificationCode(email: string, code: string): Promise<void> {
 ```
 
 **.env:**
+
 ```
 SENDGRID_API_KEY=your-api-key
 SENDGRID_FROM_EMAIL=noreply@yourdomain.com
 ```
 
 #### 3. AWS SES
+
 ```bash
 npm install @aws-sdk/client-ses
 ```
@@ -233,6 +249,7 @@ async sendVerificationCode(email: string, code: string): Promise<void> {
 ```
 
 **.env:**
+
 ```
 AWS_ACCESS_KEY_ID=your-access-key
 AWS_SECRET_ACCESS_KEY=your-secret-key
@@ -285,6 +302,7 @@ async verify2FA(@Body() verify2FADto: Verify2FADto) {
 ## Пример использования
 
 ### 1. Включить 2FA для пользователя
+
 ```bash
 curl -X PATCH http://localhost:3000/auth/toggle-2fa \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
@@ -293,6 +311,7 @@ curl -X PATCH http://localhost:3000/auth/toggle-2fa \
 ```
 
 ### 2. Войти с 2FA
+
 ```bash
 # Шаг 1: Отправить логин
 curl -X POST http://localhost:3000/auth/login \
