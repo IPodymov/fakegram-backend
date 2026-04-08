@@ -1,55 +1,167 @@
 # Fakegram Backend
 
 Instagram Clone Backend API построенный на NestJS, TypeORM и PostgreSQL.
+Архитектура — **Modular Monolith** с event-driven коммуникацией между модулями.
 
 ## 📁 Структура проекта
 
 ```
 src/
-├── config/                 # Конфигурационные файлы
-│   ├── database.config.ts  # Настройки PostgreSQL/TypeORM
-│   └── jwt.config.ts       # Настройки JWT авторизации
-├── common/                 # Общие модули
-│   ├── guards/            # Guard'ы (JwtAuthGuard)
-│   ├── decorators/        # Декораторы (@CurrentUser)
-│   ├── interceptors/      # Interceptor'ы
-│   └── filters/           # Exception фильтры
-├── entities/              # TypeORM Entities (модели БД)
-│   ├── user.entity.ts
-│   ├── post.entity.ts
-│   ├── story.entity.ts
-│   ├── comment.entity.ts
-│   ├── like.entity.ts
-│   ├── follower.entity.ts
-│   ├── direct-message.entity.ts
-│   ├── notification.entity.ts
-│   ├── short-link.entity.ts
-│   ├── reel.entity.ts
-│   └── user-reel-history.entity.ts
-└── modules/               # Функциональные модули
-    ├── auth/             # Аутентификация (login, register, cookie-based)
+├── config/                          # Конфигурационные файлы
+│   └── jwt.config.ts                # Настройки JWT авторизации
+├── infrastructure/                  # Инфраструктурный слой
+│   ├── database/
+│   │   ├── database.module.ts       # Глобальный модуль TypeORM
+│   │   └── database.config.ts       # Настройки PostgreSQL/TypeORM
+│   └── events/
+│       └── events.module.ts         # Глобальный модуль EventEmitter
+├── common/                          # Общие модули
+│   ├── common.module.ts             # Глобальный модуль (UrlService)
+│   ├── guards/                      # Guard'ы (JwtAuthGuard)
+│   ├── decorators/                  # Декораторы (@CurrentUser)
+│   ├── filters/                     # Exception фильтры
+│   ├── services/                    # Общие сервисы (UrlService)
+│   └── utils/                       # Утилиты (FileUtils)
+└── modules/                         # Функциональные модули
+    ├── auth/                        # Аутентификация
+    │   ├── controllers/
+    │   │   └── auth.controller.ts
+    │   ├── services/
+    │   │   └── auth.service.ts
+    │   ├── domain/
+    │   │   └── interfaces/
+    │   │       └── email.interface.ts
     │   ├── dto/
-    │   ├── auth.controller.ts
-    │   ├── auth.service.ts
+    │   │   ├── login.dto.ts
+    │   │   ├── register.dto.ts
+    │   │   ├── enable-2fa.dto.ts
+    │   │   └── verify-2fa.dto.ts
     │   └── auth.module.ts
-    ├── users/            # Управление пользователями + рекомендации
+    ├── users/                       # Управление пользователями
+    │   ├── controllers/
+    │   │   └── users.controller.ts
+    │   ├── services/
+    │   │   └── users.service.ts
+    │   ├── domain/
+    │   │   └── entities/
+    │   │       └── user.entity.ts
     │   ├── dto/
-    │   ├── users.controller.ts
-    │   ├── users.service.ts
+    │   │   └── update-user.dto.ts
+    │   ├── events/
+    │   │   └── user.events.ts       # UserRegisteredEvent
     │   └── users.module.ts
-    ├── posts/            # Посты
+    ├── posts/                       # Посты, комментарии, лайки, reels
+    │   ├── controllers/
+    │   │   └── posts.controller.ts
+    │   ├── services/
+    │   │   └── posts.service.ts
+    │   ├── domain/
+    │   │   └── entities/
+    │   │       ├── post.entity.ts
+    │   │       ├── comment.entity.ts
+    │   │       ├── like.entity.ts
+    │   │       ├── reel.entity.ts
+    │   │       └── user-reel-history.entity.ts
     │   ├── dto/
-    │   ├── posts.controller.ts
-    │   ├── posts.service.ts
+    │   │   ├── create-post.dto.ts
+    │   │   └── update-post.dto.ts
+    │   ├── events/
+    │   │   └── post.events.ts       # PostCreatedEvent, PostLikedEvent, CommentAddedEvent...
     │   └── posts.module.ts
-    ├── stories/          # Истории (24ч)
-    ├── comments/         # Комментарии к постам
-    ├── likes/            # Лайки
-    ├── followers/        # Подписки + авто-уведомления
-    ├── messages/         # Личные сообщения
-    ├── notifications/    # Уведомления (лайки, подписки, новые посты)
-    ├── short-links/      # Короткие ссылки для шаринга профилей
-    └── reels/            # Reels видео
+    ├── stories/                     # Истории (24ч)
+    │   ├── controllers/
+    │   │   └── stories.controller.ts
+    │   ├── services/
+    │   │   └── stories.service.ts
+    │   ├── domain/
+    │   │   └── entities/
+    │   │       └── story.entity.ts
+    │   ├── dto/
+    │   │   └── create-story.dto.ts
+    │   └── stories.module.ts
+    ├── followers/                   # Подписки
+    │   ├── controllers/
+    │   │   └── followers.controller.ts
+    │   ├── services/
+    │   │   └── followers.service.ts
+    │   ├── domain/
+    │   │   └── entities/
+    │   │       └── follower.entity.ts
+    │   ├── events/
+    │   │   └── follower.events.ts   # UserFollowedEvent, UserUnfollowedEvent
+    │   └── followers.module.ts
+    ├── notifications/               # Уведомления (event-driven)
+    │   ├── controllers/
+    │   │   └── notifications.controller.ts
+    │   ├── services/
+    │   │   └── notifications.service.ts  # @OnEvent listeners
+    │   ├── domain/
+    │   │   └── entities/
+    │   │       └── notification.entity.ts
+    │   ├── events/
+    │   │   └── notification.events.ts
+    │   └── notifications.module.ts
+    ├── chats/                       # Чаты и сообщения
+    │   ├── controllers/
+    │   │   └── chats.controller.ts
+    │   ├── services/
+    │   │   └── chats.service.ts
+    │   ├── domain/
+    │   │   └── entities/
+    │   │       ├── chat.entity.ts
+    │   │       ├── chat-member.entity.ts
+    │   │       └── message.entity.ts
+    │   ├── dto/
+    │   │   ├── create-chat.dto.ts
+    │   │   ├── join-chat.dto.ts
+    │   │   └── send-message.dto.ts
+    │   └── chats.module.ts
+    └── short-links/                 # Короткие ссылки
+        ├── controllers/
+        │   └── short-links.controller.ts
+        ├── services/
+        │   └── short-links.service.ts
+        ├── domain/
+        │   └── entities/
+        │       └── short-link.entity.ts
+        └── short-links.module.ts
+```
+
+## 🧩 Архитектура: Modular Monolith
+
+Проект построен по принципу **Modular Monolith** — каждый модуль инкапсулирует свою бизнес-логику и данные.
+
+### Принципы
+
+1. **Один модуль = один домен** — каждый модуль владеет своими сущностями, сервисами и контроллерами
+2. **Event-driven коммуникация** — модули общаются через события (`@nestjs/event-emitter`), а не прямые вызовы сервисов соседних модулей
+3. **Инфраструктурный слой** — `DatabaseModule` и `EventsModule` вынесены в `src/infrastructure/` как глобальные модули
+4. **Общий слой** — `CommonModule` содержит guards, decorators, filters и утилиты, которые используются всеми модулями
+
+### Event-driven коммуникация
+
+| Событие | Источник | Обработчик |
+|---------|----------|------------|
+| `user.registered` | AuthService | — |
+| `post.created` | PostsService | — |
+| `post.deleted` | PostsService | — |
+| `post.liked` | PostsService | NotificationsService |
+| `comment.added` | PostsService | NotificationsService |
+| `user.followed` | FollowersService | NotificationsService |
+| `user.unfollowed` | FollowersService | — |
+
+### Структура модуля
+
+```
+module/
+├── controllers/          # HTTP-эндпоинты
+├── services/             # Бизнес-логика
+├── domain/
+│   ├── entities/         # TypeORM-сущности
+│   └── interfaces/       # Интерфейсы домена
+├── dto/                  # Data Transfer Objects
+├── events/               # Event-классы
+└── module.ts             # NestJS модуль
 ```
 
 ## 🗄️ База данных
@@ -62,8 +174,10 @@ src/
 - **comments** - комментарии к постам
 - **likes** - лайки постов
 - **followers** - подписки между пользователями
-- **direct_messages** - личные сообщения
-- **notifications** - уведомления (лайки, подписки, новые посты, комментарии, упоминания)
+- **chats** - чаты (личные и групповые)
+- **chat_members** - участники чатов
+- **messages** - сообщения в чатах
+- **notifications** - уведомления (лайки, подписки, комментарии)
 - **short_links** - короткие ссылки для шаринга профилей
 - **reels** - короткие видео
 - **user_reel_history** - история просмотров reels
@@ -125,43 +239,54 @@ npm run start:prod
 
 ## 📝 API Endpoints
 
+> Все эндпоинты имеют глобальный префикс `/api`.
+
 ### Аутентификация (Cookie-based)
-- `POST /auth/register` - Регистрация пользователя
-- `POST /auth/login` - Авторизация (устанавливает httpOnly cookie)
-- `POST /auth/logout` - Выход (очищает cookie)
-- `GET /auth/me` - Текущий пользователь
+- `POST /api/auth/register` - Регистрация пользователя
+- `POST /api/auth/login` - Авторизация (устанавливает httpOnly cookie)
+- `POST /api/auth/logout` - Выход (очищает cookie)
+- `GET /api/auth/me` - Текущий пользователь
 
 ### Пользователи
-- `GET /users` - Список пользователей
-- `GET /users/:id` - Профиль пользователя
-- `GET /users/username/:username` - Поиск по username
-- `GET /users/suggestions` - Рекомендации пользователей для подписки
-- `GET /users/search?query=...` - Поиск по запросу
-- `PUT /users/:id` - Обновление профиля
-- `DELETE /users/:id` - Удаление пользователя
+- `GET /api/users` - Список пользователей
+- `GET /api/users/:id` - Профиль пользователя
+- `GET /api/users/username/:username` - Поиск по username
+- `GET /api/users/suggestions` - Рекомендации пользователей для подписки
+- `GET /api/users/search?query=...` - Поиск по запросу
+- `PUT /api/users/:id` - Обновление профиля
+- `DELETE /api/users/:id` - Удаление пользователя
 
 ### Посты
-- `GET /posts` - Лента постов
-- `GET /posts?userId=:id` - Посты пользователя
-- `GET /posts/:id` - Один пост
-- `POST /posts` - Создать пост (с base64 изображением)
-- `PUT /posts/:id` - Обновить пост
-- `DELETE /posts/:id` - Удалить пост
+- `GET /api/posts` - Лента постов
+- `GET /api/posts?userId=:id` - Посты пользователя
+- `GET /api/posts/:id` - Один пост
+- `POST /api/posts` - Создать пост (с base64 изображением)
+- `PUT /api/posts/:id` - Обновить пост
+- `DELETE /api/posts/:id` - Удалить пост
 
 ### Уведомления
-- `GET /notifications` - Все уведомления
-- `GET /notifications/unread` - Непрочитанные уведомления
-- `GET /notifications/unread-count` - Количество непрочитанных
-- `PATCH /notifications/:id/read` - Пометить как прочитанное
-- `PATCH /notifications/read-all` - Пометить все как прочитанные
-- `DELETE /notifications/:id` - Удалить уведомление
-- `DELETE /notifications` - Удалить все уведомления
+- `GET /api/notifications` - Все уведомления
+- `GET /api/notifications/unread` - Непрочитанные уведомления
+- `GET /api/notifications/unread-count` - Количество непрочитанных
+- `PATCH /api/notifications/:id/read` - Пометить как прочитанное
+- `PATCH /api/notifications/read-all` - Пометить все как прочитанные
+- `DELETE /api/notifications/:id` - Удалить уведомление
+- `DELETE /api/notifications` - Удалить все уведомления
 
 ### Короткие ссылки
-- `POST /short-links` - Создать короткую ссылку
-- `GET /short-links/me` - Получить свою короткую ссылку
-- `GET /s/:code` - Перейти по короткой ссылке (redirect)
-- `DELETE /short-links` - Удалить короткую ссылку
+- `POST /api/short-links` - Создать короткую ссылку
+- `GET /api/short-links/me` - Получить свою короткую ссылку
+- `GET /api/s/:code` - Перейти по короткой ссылке (redirect)
+- `DELETE /api/short-links` - Удалить короткую ссылку
+
+### Чаты
+- `POST /api/chats` - Создать чат (direct или группа)
+- `GET /api/chats` - Список чатов текущего пользователя
+- `GET /api/chats/:id` - Детали чата
+- `POST /api/chats/join` - Присоединиться по инвайт-коду
+- `POST /api/chats/:id/messages` - Отправить сообщение
+- `GET /api/chats/:id/messages` - Получить сообщения чата
+- `POST /api/chats/:id/invite` - Создать инвайт-ссылку
 
 ## 🔧 Технологии
 
@@ -170,25 +295,31 @@ npm run start:prod
 - **PostgreSQL** - реляционная база данных
 - **JWT** - аутентификация через токены
 - **httpOnly Cookies** - хранение JWT в защищенных cookie
+- **@nestjs/event-emitter** - event-driven коммуникация между модулями
 - **cookie-parser** - middleware для работы с cookies
 - **bcrypt** - хеширование паролей
 - **class-validator** - валидация данных
 - **class-transformer** - трансформация объектов
+- **Swagger** - автогенерация API документации
 - **Base64** - загрузка изображений в строковом формате
 
 ## 📚 Дополнительно
 
 Реализованные модули:
 - ✅ Аутентификация с cookie-based JWT
+- ✅ Двухфакторная аутентификация через email
 - ✅ Управление пользователями с рекомендациями
 - ✅ Посты с base64 загрузкой изображений
-- ✅ Уведомления (лайки, подписки, новые посты, комментарии, упоминания)
+- ✅ Истории (stories) с 24-часовым сроком действия
+- ✅ Уведомления (event-driven: лайки, подписки, комментарии)
 - ✅ Короткие ссылки для шаринга профилей
-- ✅ Система подписок с автоматическими уведомлениями
+- ✅ Система подписок
 - ✅ Лайки и комментарии
+- ✅ Чаты (личные и групповые) с инвайт-ссылками
+- ✅ Reels (короткие видео)
+- ✅ Modular Monolith архитектура с event-driven коммуникацией
 
 Требуется реализовать:
-- Stories, Messages, Reels модули
 - WebSocket для real-time чата и уведомлений
 - Rate limiting
 - Тесты

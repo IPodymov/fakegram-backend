@@ -2,9 +2,9 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { PostsController } from './posts.controller';
-import { PostsService } from './posts.service';
-import { Post } from '../../entities/post.entity';
+import { PostsController } from './controllers/posts.controller';
+import { PostsService } from './services/posts.service';
+import { Post } from './domain/entities/post.entity';
 import { getJwtConfig } from '../../config/jwt.config';
 
 @Module({

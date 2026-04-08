@@ -2,9 +2,9 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { StoriesController } from './stories.controller';
-import { StoriesService } from './stories.service';
-import { Story } from '../../entities/story.entity';
+import { StoriesController } from './controllers/stories.controller';
+import { StoriesService } from './services/stories.service';
+import { Story } from './domain/entities/story.entity';
 import { getJwtConfig } from '../../config/jwt.config';
 
 @Module({

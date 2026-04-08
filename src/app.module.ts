@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { getDatabaseConfig } from './config/database.config';
+import { DatabaseModule } from './infrastructure/database/database.module';
+import { EventsModule } from './infrastructure/events/events.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { PostsModule } from './modules/posts/posts.module';
@@ -20,11 +20,8 @@ import { CommonModule } from './common/common.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: getDatabaseConfig,
-      inject: [ConfigService],
-    }),
+    DatabaseModule,
+    EventsModule,
     CommonModule,
     UsersModule,
     AuthModule,

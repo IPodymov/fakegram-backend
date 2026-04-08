@@ -1,8 +1,11 @@
 # Fakegram API Documentation
 
+> **Базовый URL:** `http://localhost:7777/api`
+> Все эндпоинты имеют глобальный префикс `/api`.
+
 ## Cookie-based Authentication
 
-Все эндпоинты аутентификации (`/auth/login`, `/auth/register`) автоматически устанавливают JWT токен в httpOnly cookie с именем `access_token`. Cookie имеет следующие параметры:
+Все эндпоинты аутентификации (`/api/auth/login`, `/api/auth/register`) автоматически устанавливают JWT токен в httpOnly cookie с именем `access_token`. Cookie имеет следующие параметры:
 
 - **httpOnly**: true (защита от XSS атак)
 - **secure**: true в production (требует HTTPS)
@@ -12,13 +15,13 @@
 Для работы с cookie на фронтенде необходимо включить отправку credentials:
 ```javascript
 // Fetch API
-fetch('http://localhost:3000/auth/login', {
+fetch('http://localhost:7777/api/auth/login', {
   credentials: 'include',
   // ... другие параметры
 });
 
 // Axios
-axios.post('http://localhost:3000/auth/login', data, {
+axios.post('http://localhost:7777/api/auth/login', data, {
   withCredentials: true
 });
 ```
@@ -29,7 +32,7 @@ JWT guard автоматически читает токен из cookie, есл
 
 ### Регистрация нового пользователя
 
-**Endpoint:** `POST /auth/register`
+**Endpoint:** `POST /api/auth/register`
 
 **Request Body:**
 ```json
@@ -48,7 +51,7 @@ JWT guard автоматически читает токен из cookie, есл
 **Success Response (201):**
 ```json
 {
-  "message": "User registered successfully",
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
   "user": {
     "id": "uuid",
     "username": "john_doe",
@@ -64,7 +67,7 @@ JWT guard автоматически читает токен из cookie, есл
 ```
 
 **Notes:**
-- После успешной регистрации пользователь автоматически авторизуется и получает JWT токен в cookie
+- После успешной регистрации пользователь автоматически авторизуется и получает JWT токен в cookie и в теле ответа
 - Токен действителен 7 дней
 
 **Error Responses:**
@@ -102,7 +105,7 @@ JWT guard автоматически читает токен из cookie, есл
 
 ### Вход в систему
 
-**Endpoint:** `POST /auth/login`
+**Endpoint:** `POST /api/auth/login`
 
 **Request Body:**
 ```json
@@ -111,6 +114,8 @@ JWT guard автоматически читает токен из cookie, есл
   "password": "securePassword123"
 }
 ```
+
+> Поле `username` принимает как логин, так и email. Если значение содержит `@`, поиск выполняется по email.
 
 **Success Response (200):**
 ```json
@@ -161,7 +166,7 @@ JWT guard автоматически читает токен из cookie, есл
 
 ### Выход из системы
 
-**Endpoint:** `POST /auth/logout`
+**Endpoint:** `POST /api/auth/logout`
 
 **Authentication:** Не требуется
 
@@ -180,7 +185,7 @@ JWT guard автоматически читает токен из cookie, есл
 
 ### Получить текущего пользователя
 
-**Endpoint:** `GET /auth/me`
+**Endpoint:** `GET /api/auth/me`
 
 **Authentication:** Required (JWT)
 
@@ -225,7 +230,7 @@ JWT guard автоматически читает токен из cookie, есл
 
 **Регистрация:**
 ```bash
-curl -X POST http://localhost:3000/auth/register \
+curl -X POST http://localhost:7777/api/auth/register \
   -H "Content-Type: application/json" \
   -c cookies.txt \
   -d '{
@@ -237,7 +242,7 @@ curl -X POST http://localhost:3000/auth/register \
 
 **Логин:**
 ```bash
-curl -X POST http://localhost:3000/auth/login \
+curl -X POST http://localhost:7777/api/auth/login \
   -H "Content-Type: application/json" \
   -c cookies.txt \
   -d '{
@@ -248,13 +253,13 @@ curl -X POST http://localhost:3000/auth/login \
 
 **Использование cookie для защищенных запросов:**
 ```bash
-curl -X GET http://localhost:3000/auth/me \
+curl -X GET http://localhost:7777/api/auth/me \
   -b cookies.txt
 ```
 
 **Логаут:**
 ```bash
-curl -X POST http://localhost:3000/auth/logout \
+curl -X POST http://localhost:7777/api/auth/logout \
   -b cookies.txt \
   -c cookies.txt
 ```
@@ -264,7 +269,7 @@ curl -X POST http://localhost:3000/auth/logout \
 **Регистрация:**
 ```javascript
 const register = async () => {
-  const response = await fetch('http://localhost:3000/auth/register', {
+  const response = await fetch('http://localhost:7777/api/auth/register', {
     method: 'POST',
     credentials: 'include', // Важно для работы с cookies
     headers: {
@@ -285,7 +290,7 @@ const register = async () => {
 **Логин:**
 ```javascript
 const login = async () => {
-  const response = await fetch('http://localhost:3000/auth/login', {
+  const response = await fetch('http://localhost:7777/api/auth/login', {
     method: 'POST',
     credentials: 'include', // Важно для работы с cookies
     headers: {
@@ -305,7 +310,7 @@ const login = async () => {
 **Получить текущего пользователя:**
 ```javascript
 const getCurrentUser = async () => {
-  const response = await fetch('http://localhost:3000/auth/me', {
+  const response = await fetch('http://localhost:7777/api/auth/me', {
     credentials: 'include' // Cookie автоматически отправится
   });
   
@@ -317,7 +322,7 @@ const getCurrentUser = async () => {
 **Логаут:**
 ```javascript
 const logout = async () => {
-  const response = await fetch('http://localhost:3000/auth/logout', {
+  const response = await fetch('http://localhost:7777/api/auth/logout', {
     method: 'POST',
     credentials: 'include'
   });
@@ -338,7 +343,7 @@ const logout = async () => {
 const getProtectedData = async () => {
   const token = localStorage.getItem('access_token');
   
-  const response = await fetch('http://localhost:3000/posts', {
+  const response = await fetch('http://localhost:7777/api/posts', {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -358,7 +363,7 @@ import axios from 'axios';
 // Регистрация
 const register = async () => {
   try {
-    const response = await axios.post('http://localhost:3000/auth/register', {
+    const response = await axios.post('http://localhost:7777/api/auth/register', {
       username: 'john_doe',
       email: 'john@example.com',
       password: 'securePassword123'
@@ -372,7 +377,7 @@ const register = async () => {
 // Логин
 const login = async () => {
   try {
-    const response = await axios.post('http://localhost:3000/auth/login', {
+    const response = await axios.post('http://localhost:7777/api/auth/login', {
       username: 'john_doe',
       password: 'securePassword123'
     });
@@ -438,7 +443,7 @@ getProfile(@CurrentUser() user) {
 
 ### Создание поста
 
-**Endpoint:** `POST /posts`
+**Endpoint:** `POST /api/posts`
 
 **Headers:**
 ```
@@ -480,7 +485,7 @@ Content-Type: application/json
 
 ### Получение всех постов
 
-**Endpoint:** `GET /posts`
+**Endpoint:** `GET /api/posts`
 
 **Query Parameters:**
 - `userId` (optional) - фильтр по ID пользователя
@@ -513,7 +518,7 @@ Content-Type: application/json
 
 ### Получение поста по ID
 
-**Endpoint:** `GET /posts/:id`
+**Endpoint:** `GET /api/posts/:id`
 
 **Success Response (200):**
 ```json
@@ -540,7 +545,7 @@ Content-Type: application/json
 
 ### Обновление поста
 
-**Endpoint:** `PUT /posts/:id`
+**Endpoint:** `PUT /api/posts/:id`
 
 **Headers:**
 ```
@@ -564,7 +569,7 @@ Content-Type: application/json
 
 ### Удаление поста
 
-**Endpoint:** `DELETE /posts/:id`
+**Endpoint:** `DELETE /api/posts/:id`
 
 **Headers:**
 ```
@@ -582,7 +587,7 @@ Authorization: Bearer {access_token}
 
 ### Создание истории
 
-**Endpoint:** `POST /stories`
+**Endpoint:** `POST /api/stories`
 
 **Headers:**
 ```
@@ -618,7 +623,7 @@ Content-Type: application/json
 
 ### Получение всех историй
 
-**Endpoint:** `GET /stories`
+**Endpoint:** `GET /api/stories`
 
 **Query Parameters:**
 - `userId` (optional) - фильтр по ID пользователя
@@ -647,7 +652,7 @@ Content-Type: application/json
 
 ### Получение истории по ID
 
-**Endpoint:** `GET /stories/:id`
+**Endpoint:** `GET /api/stories/:id`
 
 **Success Response (200):**
 ```json
@@ -670,7 +675,7 @@ Content-Type: application/json
 
 ### Удаление истории
 
-**Endpoint:** `DELETE /stories/:id`
+**Endpoint:** `DELETE /api/stories/:id`
 
 **Headers:**
 ```
@@ -693,7 +698,7 @@ Authorization: Bearer {access_token}
 const createPost = async () => {
   const token = localStorage.getItem('access_token');
   
-  const response = await fetch('http://localhost:3000/posts', {
+  const response = await fetch('http://localhost:7777/api/posts', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -717,7 +722,7 @@ const createPost = async () => {
 const createStory = async () => {
   const token = localStorage.getItem('access_token');
   
-  const response = await fetch('http://localhost:3000/stories', {
+  const response = await fetch('http://localhost:7777/api/stories', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -737,7 +742,7 @@ const createStory = async () => {
 **Получение постов пользователя:**
 ```javascript
 const getUserPosts = async (userId) => {
-  const response = await fetch(`http://localhost:3000/posts?userId=${userId}`);
+  const response = await fetch(`http://localhost:7777/api/posts?userId=${userId}`);
   const data = await response.json();
   console.log(data);
 };
@@ -749,7 +754,7 @@ const getUserPosts = async (userId) => {
 
 ### Подписаться на пользователя
 
-**Endpoint:** `POST /users/:userId/follow`
+**Endpoint:** `POST /api/users/:userId/follow`
 
 **Headers:**
 ```
@@ -796,7 +801,7 @@ Authorization: Bearer {access_token}
 
 ### Отписаться от пользователя
 
-**Endpoint:** `DELETE /users/:userId/follow`
+**Endpoint:** `DELETE /api/users/:userId/follow`
 
 **Headers:**
 ```
@@ -824,7 +829,7 @@ Authorization: Bearer {access_token}
 
 ### Получить список подписчиков
 
-**Endpoint:** `GET /users/:userId/followers`
+**Endpoint:** `GET /api/users/:userId/followers`
 
 **Success Response (200):**
 ```json
@@ -844,7 +849,7 @@ Authorization: Bearer {access_token}
 
 ### Получить список подписок
 
-**Endpoint:** `GET /users/:userId/following`
+**Endpoint:** `GET /api/users/:userId/following`
 
 **Success Response (200):**
 ```json
@@ -864,7 +869,7 @@ Authorization: Bearer {access_token}
 
 ### Проверить подписку
 
-**Endpoint:** `GET /users/:userId/is-following`
+**Endpoint:** `GET /api/users/:userId/is-following`
 
 **Headers:**
 ```
@@ -889,7 +894,7 @@ Authorization: Bearer {access_token}
 const followUser = async (userId) => {
   const token = localStorage.getItem('access_token');
   
-  const response = await fetch(`http://localhost:3000/users/${userId}/follow`, {
+  const response = await fetch(`http://localhost:7777/api/users/${userId}/follow`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -906,7 +911,7 @@ const followUser = async (userId) => {
 const unfollowUser = async (userId) => {
   const token = localStorage.getItem('access_token');
   
-  const response = await fetch(`http://localhost:3000/users/${userId}/follow`, {
+  const response = await fetch(`http://localhost:7777/api/users/${userId}/follow`, {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -921,7 +926,7 @@ const unfollowUser = async (userId) => {
 **Получить подписчиков:**
 ```javascript
 const getFollowers = async (userId) => {
-  const response = await fetch(`http://localhost:3000/users/${userId}/followers`);
+  const response = await fetch(`http://localhost:7777/api/users/${userId}/followers`);
   const data = await response.json();
   console.log(data);
 };
@@ -932,7 +937,7 @@ const getFollowers = async (userId) => {
 const checkFollowing = async (userId) => {
   const token = localStorage.getItem('access_token');
   
-  const response = await fetch(`http://localhost:3000/users/${userId}/is-following`, {
+  const response = await fetch(`http://localhost:7777/api/users/${userId}/is-following`, {
     headers: {
       'Authorization': `Bearer ${token}`,
     }
@@ -949,7 +954,7 @@ const checkFollowing = async (userId) => {
 
 ### Получить все уведомления
 
-**Endpoint:** `GET /notifications`
+**Endpoint:** `GET /api/notifications`
 
 **Authentication:** Required (JWT)
 
@@ -974,13 +979,13 @@ const checkFollowing = async (userId) => {
 
 ### Получить непрочитанные уведомления
 
-**Endpoint:** `GET /notifications/unread`
+**Endpoint:** `GET /api/notifications/unread`
 
 **Authentication:** Required (JWT)
 
 ### Получить количество непрочитанных
 
-**Endpoint:** `GET /notifications/unread-count`
+**Endpoint:** `GET /api/notifications/unread-count`
 
 **Authentication:** Required (JWT)
 
@@ -993,25 +998,25 @@ const checkFollowing = async (userId) => {
 
 ### Пометить как прочитанное
 
-**Endpoint:** `PATCH /notifications/:id/read`
+**Endpoint:** `PATCH /api/notifications/:id/read`
 
 **Authentication:** Required (JWT)
 
 ### Пометить все как прочитанные
 
-**Endpoint:** `PATCH /notifications/read-all`
+**Endpoint:** `PATCH /api/notifications/read-all`
 
 **Authentication:** Required (JWT)
 
 ### Удалить уведомление
 
-**Endpoint:** `DELETE /notifications/:id`
+**Endpoint:** `DELETE /api/notifications/:id`
 
 **Authentication:** Required (JWT)
 
 ### Удалить все уведомления
 
-**Endpoint:** `DELETE /notifications`
+**Endpoint:** `DELETE /api/notifications`
 
 **Authentication:** Required (JWT)
 
@@ -1021,7 +1026,7 @@ const checkFollowing = async (userId) => {
 
 ### Создать короткую ссылку
 
-**Endpoint:** `POST /short-links`
+**Endpoint:** `POST /api/short-links`
 
 **Authentication:** Required (JWT)
 
@@ -1040,7 +1045,7 @@ const checkFollowing = async (userId) => {
 
 ### Получить свою короткую ссылку
 
-**Endpoint:** `GET /short-links/me`
+**Endpoint:** `GET /api/short-links/me`
 
 **Authentication:** Required (JWT)
 
@@ -1056,7 +1061,7 @@ const checkFollowing = async (userId) => {
 
 ### Перейти по короткой ссылке
 
-**Endpoint:** `GET /s/:code`
+**Endpoint:** `GET /api/s/:code`
 
 **Authentication:** Not required
 
@@ -1068,7 +1073,7 @@ const checkFollowing = async (userId) => {
 
 ### Удалить короткую ссылку
 
-**Endpoint:** `DELETE /short-links`
+**Endpoint:** `DELETE /api/short-links`
 
 **Authentication:** Required (JWT)
 
@@ -1078,7 +1083,7 @@ const checkFollowing = async (userId) => {
 
 ### Получить рекомендации пользователей
 
-**Endpoint:** `GET /users/suggestions`
+**Endpoint:** `GET /api/users/suggestions`
 
 **Authentication:** Required (JWT)
 
@@ -1123,13 +1128,13 @@ const checkFollowing = async (userId) => {
 ```
 
 **Endpoints с shareUrl:**
-- `POST /auth/login`
-- `POST /auth/register`
-- `GET /auth/me`
-- `GET /users/:id`
-- `GET /users/username/:username`
-- `GET /users/search`
-- `GET /users/suggestions`
+- `POST /api/auth/login`
+- `POST /api/auth/register`
+- `GET /api/auth/me`
+- `GET /api/users/:id`
+- `GET /api/users/username/:username`
+- `GET /api/users/search`
+- `GET /api/users/suggestions`
 
 **Notes:**
 - Короткая ссылка генерируется автоматически при первом запросе

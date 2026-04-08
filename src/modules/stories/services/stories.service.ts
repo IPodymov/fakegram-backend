@@ -1,0 +1,59 @@
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Story } from '../domain/entities/story.entity';
+import { FileUtils } from '../../../common/utils/file.utils';
+import { UrlService } from '../../../common/services/url.service';
+
+@Injectable()
+export class StoriesService {
+  constructor(
+    @InjectRepository(Story)
+    private storiesRepository: Repository<Story>,
+    private urlService: UrlService,
+  ) {}
+
+  async findAll(): Promise<Story[]> {
+    const stories = await this.storiesRepository.find({
+      relations: ['user'],
+      order: { createdAt: 'DESC' },
+    });
+    return stories.map((story) => this.urlService.formatStoryUrls(story));
+  }
+
+  async findOne(id: string): Promise<Story | null> {
+    const story = await this.storiesRepository.findOne({
+      where: { id },
+      relations: ['user'],
+    });
+    return story ? this.urlService.formatStoryUrls(story) : null;
+  }
+
+  async findByUserId(userId: string): Promise<Story[]> {
+    const stories = await this.storiesRepository.find({
+      where: { userId },
+      relations: ['user'],
+      order: { createdAt: 'DESC' },
+    });
+    return stories.map((story) => this.urlService.formatStoryUrls(story));
+  }
+
+  async create(storyData: Partial<Story>, userId: string): Promise<Story> {
+    let mediaUrl = storyData.mediaUrl;
+    if (mediaUrl && mediaUrl.startsWith('data:image')) {
+      const savedUrl = FileUtils.saveBase64ImageSafe(mediaUrl, 'stories');
+      if (savedUrl) {
+        mediaUrl = savedUrl;
+      } else {
+        throw new BadRequestException('Failed to save story image');
+      }
+    }
+    const story = this.storiesRepository.create({ ...storyData, mediaUrl, userId });
+    const savedStory = await this.storiesRepository.save(story);
+    return this.findOne(savedStory.id);
+  }
+
+  async remove(id: string): Promise<void> {
+    await this.storiesRepository.delete(id);
+  }
+}

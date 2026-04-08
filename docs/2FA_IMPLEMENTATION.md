@@ -8,7 +8,7 @@
 
 ### 1. Вход в систему (Login)
 
-**POST** `/auth/login`
+**POST** `/api/auth/login`
 
 **Body:**
 
@@ -47,7 +47,7 @@
 
 ### 2. Подтверждение 2FA кода
 
-**POST** `/auth/verify-2fa`
+**POST** `/api/auth/verify-2fa`
 
 **Body:**
 
@@ -73,7 +73,7 @@
 
 ### 3. Включение/выключение 2FA
 
-**PATCH** `/auth/toggle-2fa`
+**PATCH** `/api/auth/toggle-2fa`
 
 **Headers:**
 
@@ -112,11 +112,11 @@ Authorization: Bearer <jwt-token>
 ## Процесс работы 2FA
 
 1. **Включение 2FA:**
-   - Пользователь отправляет запрос `PATCH /auth/toggle-2fa` с `{ "enable": true }`
+   - Пользователь отправляет запрос `PATCH /api/auth/toggle-2fa` с `{ "enable": true }`
    - Система устанавливает `twoFactorEnabled = true`
 
 2. **Вход с 2FA:**
-   - Пользователь отправляет `POST /auth/login` с email и паролем
+   - Пользователь отправляет `POST /api/auth/login` с email и паролем
    - Система проверяет учетные данные
    - Если `twoFactorEnabled = true`:
      - Генерируется 6-значный код
@@ -126,7 +126,7 @@ Authorization: Bearer <jwt-token>
 
 3. **Подтверждение кода:**
    - Пользователь вводит полученный код
-   - Отправляет `POST /auth/verify-2fa` с email и кодом
+   - Отправляет `POST /api/auth/verify-2fa` с email и кодом
    - Система проверяет:
      - Существует ли код
      - Не истек ли срок действия
@@ -304,7 +304,7 @@ async verify2FA(@Body() verify2FADto: Verify2FADto) {
 ### 1. Включить 2FA для пользователя
 
 ```bash
-curl -X PATCH http://localhost:3000/auth/toggle-2fa \
+curl -X PATCH http://localhost:7777/api/auth/toggle-2fa \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"enable": true}'
@@ -314,7 +314,7 @@ curl -X PATCH http://localhost:3000/auth/toggle-2fa \
 
 ```bash
 # Шаг 1: Отправить логин
-curl -X POST http://localhost:3000/auth/login \
+curl -X POST http://localhost:7777/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",
@@ -324,7 +324,7 @@ curl -X POST http://localhost:3000/auth/login \
 # Ответ: { "message": "Verification code sent to your email", "requires2FA": true }
 
 # Шаг 2: Подтвердить код (проверить email)
-curl -X POST http://localhost:3000/auth/verify-2fa \
+curl -X POST http://localhost:7777/api/auth/verify-2fa \
   -H "Content-Type: application/json" \
   -d '{
     "email": "user@example.com",

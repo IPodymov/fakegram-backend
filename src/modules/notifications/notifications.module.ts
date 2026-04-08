@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { NotificationsController } from './notifications.controller';
-import { NotificationsService } from './notifications.service';
-import { Notification } from '../../entities/notification.entity';
-import { User } from '../../entities/user.entity';
+import { NotificationsController } from './controllers/notifications.controller';
+import { NotificationsService } from './services/notifications.service';
+import { Notification } from './domain/entities/notification.entity';
+import { User } from '../users/domain/entities/user.entity';
 import { getJwtConfig } from '../../config/jwt.config';
 
 @Module({

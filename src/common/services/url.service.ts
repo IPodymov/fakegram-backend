@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { User } from '../../entities/user.entity';
-import { Post } from '../../entities/post.entity';
-import { Story } from '../../entities/story.entity';
-import { Notification } from '../../entities/notification.entity';
+import { User } from '../../modules/users/domain/entities/user.entity';
+import { Post } from '../../modules/posts/domain/entities/post.entity';
+import { Story } from '../../modules/stories/domain/entities/story.entity';
+import { Notification } from '../../modules/notifications/domain/entities/notification.entity';
 
 @Injectable()
 export class UrlService {

@@ -2,10 +2,10 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { FollowersController } from './followers.controller';
-import { FollowersService } from './followers.service';
-import { Follower } from '../../entities/follower.entity';
-import { User } from '../../entities/user.entity';
+import { FollowersController } from './controllers/followers.controller';
+import { FollowersService } from './services/followers.service';
+import { Follower } from './domain/entities/follower.entity';
+import { User } from '../users/domain/entities/user.entity';
 import { getJwtConfig } from '../../config/jwt.config';
 import { NotificationsModule } from '../notifications/notifications.module';
 

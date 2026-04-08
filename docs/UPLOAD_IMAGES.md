@@ -20,7 +20,7 @@
 ```javascript
 const imageBase64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRg...';
 
-fetch('http://localhost:3000/posts', {
+fetch('http://localhost:7777/api/posts', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
@@ -41,7 +41,7 @@ fetch('http://localhost:3000/posts', {
 ```javascript
 const avatarBase64 = 'data:image/png;base64,iVBORw0KGgo...';
 
-fetch('http://localhost:3000/users/USER_ID', {
+fetch('http://localhost:7777/api/users/USER_ID', {
   method: 'PUT',
   headers: {
     'Content-Type': 'application/json',
@@ -84,7 +84,7 @@ data:[MIME_TYPE];base64,[BASE64_DATA]
 
 **Пример запроса (curl):**
 ```bash
-curl -X PATCH http://localhost:3000/users/USER_ID/profile-picture \
+curl -X PATCH http://localhost:7777/api/users/USER_ID/profile-picture \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -F "file=@/path/to/image.jpg"
 ```
@@ -94,7 +94,7 @@ curl -X PATCH http://localhost:3000/users/USER_ID/profile-picture \
 const formData = new FormData();
 formData.append('file', fileInput.files[0]);
 
-fetch('http://localhost:3000/users/USER_ID/profile-picture', {
+fetch('http://localhost:7777/api/users/USER_ID/profile-picture', {
   method: 'PATCH',
   headers: {
     'Authorization': 'Bearer YOUR_JWT_TOKEN'
@@ -145,7 +145,7 @@ fakegram-backend/
 
 Загруженные файлы доступны по URL:
 ```
-http://localhost:3000/uploads/profile-pictures/filename.jpg
+http://localhost:7777/api/uploads/profile-pictures/filename.jpg
 ```
 
 ## Примечания

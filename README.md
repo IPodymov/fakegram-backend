@@ -21,12 +21,14 @@ Instagram Clone REST API построенный на **NestJS**, **TypeORM** и 
 ## 🚀 Технологический стек
 
 - **Framework**: NestJS 11
+- **Architecture**: Modular Monolith + Event-Driven
 - **Language**: TypeScript
 - **Database**: PostgreSQL
 - **ORM**: TypeORM 0.3
 - **Authentication**: JWT + httpOnly Cookies
-- **Logging**: Winston + nest-winston (с цветным выводом)
+- **Events**: @nestjs/event-emitter
 - **Validation**: class-validator, class-transformer
+- **API Docs**: Swagger (auto-generated)
 - **Password Hashing**: bcrypt
 
 ## 📦 Установка
@@ -56,15 +58,15 @@ JWT_SECRET=your-super-secret-key-change-in-production
 JWT_EXPIRATION=7d
 
 # App - основные параметры приложения
-PORT=3000
+PORT=7777
 NODE_ENV=development
 
 # CORS - разрешенные источники (используйте URL фронтенда в production)
-CORS_ORIGIN=http://localhost:5173
+CORS_ORIGIN=http://localhost:3000
 
 # URLs
-BASE_URL=http://localhost:3000
-FRONTEND_URL=http://localhost:5173
+BASE_URL=http://localhost:7777
+FRONTEND_URL=http://localhost:3000
 ```
 
 ### Описание переменных:
@@ -74,11 +76,11 @@ FRONTEND_URL=http://localhost:5173
 | `DATABASE_URL`   | Строка подключения к PostgreSQL           | `postgresql://user:pass@localhost:5432/fakegram` |
 | `JWT_SECRET`     | Секретный ключ для подписания JWT токенов | `your-secret-key`                                |
 | `JWT_EXPIRATION` | Время жизни токена                        | `7d`, `24h`, `3600`                              |
-| `PORT`           | Порт запуска сервера                      | `3000`                                           |
+| `PORT`           | Порт запуска сервера                      | `7777`                                           |
 | `NODE_ENV`       | Окружение                                 | `development`, `production`                      |
-| `CORS_ORIGIN`    | Адрес фронтенда для CORS                  | `http://localhost:5173`                          |
-| `BASE_URL`       | Базовый URL приложения                    | `http://localhost:3000`                          |
-| `FRONTEND_URL`   | URL фронтенда                             | `http://localhost:5173`                          |
+| `CORS_ORIGIN`    | Адрес фронтенда для CORS                  | `http://localhost:3000`                          |
+| `BASE_URL`       | Базовый URL приложения                    | `http://localhost:7777`                          |
+| `FRONTEND_URL`   | URL фронтенда                             | `http://localhost:3000`                          |
 
 ## 🔧 Запуск
 
@@ -125,7 +127,7 @@ API использует JWT токены, которые хранятся в ht
 
 ```javascript
 // Fetch API
-fetch('http://localhost:3000/api/endpoint', {
+fetch('http://localhost:7777/api/endpoint', {
   credentials: 'include',  // Обязательно для отправки cookies
 });
 
