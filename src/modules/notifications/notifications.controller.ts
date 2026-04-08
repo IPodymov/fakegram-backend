@@ -19,23 +19,30 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@ne
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
+  private transformNotification(n: Notification): any {
+    const { isRead, ...rest } = n as any;
+    return { ...rest, read: isRead };
+  }
+
   @Get()
   @ApiOperation({ summary: 'Получить все уведомления', description: 'Получить список всех уведомлений текущего пользователя' })
   @ApiResponse({ status: 200, description: 'Список уведомлений' })
   @ApiResponse({ status: 401, description: 'Необходима авторизация' })
-  findAll(
+  async findAll(
     @CurrentUser() user: { id: string; username: string },
-  ): Promise<Notification[]> {
-    return this.notificationsService.findByUserId(user.id);
+  ): Promise<any[]> {
+    const notifications = await this.notificationsService.findByUserId(user.id);
+    return notifications.map((n) => this.transformNotification(n));
   }
 
   @Get('unread')
   @ApiOperation({ summary: 'Получить непрочитанные уведомления', description: 'Получить только непрочитанные уведомления' })
   @ApiResponse({ status: 200, description: 'Список непрочитанных уведомлений' })
-  findUnread(
+  async findUnread(
     @CurrentUser() user: { id: string; username: string },
-  ): Promise<Notification[]> {
-    return this.notificationsService.findUnreadByUserId(user.id);
+  ): Promise<any[]> {
+    const notifications = await this.notificationsService.findUnreadByUserId(user.id);
+    return notifications.map((n) => this.transformNotification(n));
   }
 
   @Get('unread-count')
@@ -53,8 +60,9 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Пометить как прочитанное', description: 'Пометить уведомление как прочитанное' })
   @ApiParam({ name: 'id', description: 'ID уведомления' })
   @ApiResponse({ status: 200, description: 'Уведомление помечено как прочитанное' })
-  markAsRead(@Param('id') id: string): Promise<Notification> {
-    return this.notificationsService.markAsRead(id);
+  async markAsRead(@Param('id') id: string): Promise<any> {
+    const notification = await this.notificationsService.markAsRead(id);
+    return this.transformNotification(notification);
   }
 
   @Patch('read-all')

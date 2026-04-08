@@ -31,6 +31,9 @@ async function bootstrap() {
   // Cookie parser
   app.use(cookieParser());
 
+  // Глобальный префикс API
+  app.setGlobalPrefix('api');
+
   // Глобальный обработчик ошибок
   app.useGlobalFilters(new AllExceptionsFilter());
 
@@ -54,7 +57,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   app.enableCors({
-    origin: process.env.CORS_ORIGIN || '*',
+    origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:3000'],
     credentials: true,
   });
 

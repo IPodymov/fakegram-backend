@@ -41,10 +41,13 @@ export class AuthService {
   ) {}
 
   async validateUser(
-    username: string,
+    usernameOrEmail: string,
     password: string,
   ): Promise<UserWithoutPassword | null> {
-    const user = await this.usersService.findByUsername(username);
+    const isEmail = usernameOrEmail.includes('@');
+    const user = isEmail
+      ? await this.usersService.findByEmail(usernameOrEmail)
+      : await this.usersService.findByUsername(usernameOrEmail);
 
     if (!user) {
       return null;

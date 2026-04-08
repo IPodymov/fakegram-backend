@@ -131,7 +131,7 @@ export class AuthController {
   async register(
     @Body() registerDto: RegisterDto,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<{ message: string; user: UserWithoutPassword }> {
+  ): Promise<LoginResponse> {
     try {
       // Проверка существующего username
       const existingUser = await this.authService.findByUsername(
@@ -166,10 +166,7 @@ export class AuthController {
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 дней
       });
 
-      return {
-        message: 'User registered successfully',
-        user: result,
-      };
+      return loginResponse;
     } catch (error) {
       if (error instanceof HttpException) {
         throw error;
